@@ -31,6 +31,12 @@ const Dashboard = () => {
     type: "info",
   });
 
+  const [previewModal, setPreviewModal] = useState({
+    isOpen: false,
+    scenarioId: null,
+    scenarioName: "",
+  });
+
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
@@ -97,6 +103,14 @@ const Dashboard = () => {
     });
   };
 
+  const openPreviewModal = (scenarioId, scenarioName) => {
+    setPreviewModal({ isOpen: true, scenarioId, scenarioName });
+  };
+
+  const closePreviewModal = () => {
+    setPreviewModal({ isOpen: false, scenarioId: null, scenarioName: "" });
+  };
+
   const fetchScenarios = async (isSilentRefresh = false) => {
     try {
       const response = await fetch(`${config.API_BASE_URL}/scenario`, {
@@ -119,6 +133,18 @@ const Dashboard = () => {
     }
   };
 
+  const handlePreviewVideo = (scenarioId, videoStatus, scenarioName) => {
+    if (videoStatus !== "completed") {
+      showMessage(
+        "Video Not Ready",
+        "Video is still being generated. Please wait a moment and try again.",
+        "warning"
+      );
+      return;
+    }
+    openPreviewModal(scenarioId, scenarioName);
+  };
+
   const handleDownloadVideo = async (scenarioId, videoStatus) => {
     if (videoStatus !== "completed") {
       showMessage(
@@ -132,7 +158,7 @@ const Dashboard = () => {
     try {
       setDownloading(scenarioId);
       const response = await fetch(
-        `${config.API_BASE_URL}/scenario/${scenarioId}/video`,
+        `${config.API_BASE_URL}/scenario/${scenarioId}/video/download`,
         {
           method: "GET",
           headers: {
@@ -517,7 +543,23 @@ const Dashboard = () => {
                       onClick={() => navigate(`/edit-scenario/${scenario._id}`)}
                       disabled={deleting === scenario._id}
                     >
-                      ✏️ Edit
+                      Edit
+                    </button>
+                    <button
+                      className="btn-preview"
+                      onClick={() =>
+                        handlePreviewVideo(
+                          scenario._id,
+                          scenario.videoStatus,
+                          scenario.name
+                        )
+                      }
+                      disabled={
+                        scenario.videoStatus !== "completed" ||
+                        deleting === scenario._id
+                      }
+                    >
+                      Preview
                     </button>
                     <button
                       className="btn-download"
@@ -532,7 +574,7 @@ const Dashboard = () => {
                     >
                       {downloading === scenario._id
                         ? "Downloading..."
-                        : "⬇️ Download"}
+                        : "Download"}
                     </button>
                     <button
                       className="btn-delete"
@@ -561,6 +603,56 @@ const Dashboard = () => {
         message={confirmModal.message}
         type={confirmModal.type}
       />
+
+      {previewModal.isOpen && (
+        <div className="modal-overlay" onClick={closePreviewModal}>
+          <div
+            className="modal-video-preview"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2>{previewModal.scenarioName}</h2>
+              <button className="modal-close" onClick={closePreviewModal}>
+                ✕
+              </button>
+            </div>
+            <div className="modal-body-video">
+              <video
+                controls
+                autoPlay
+                style={{
+                  width: "100%",
+                  maxHeight: "70vh",
+                  backgroundColor: "#000",
+                  borderRadius: "8px",
+                }}
+                key={previewModal.scenarioId}
+              >
+                <source
+                  src={`${config.API_BASE_URL}/scenario/${
+                    previewModal.scenarioId
+                  }/video/preview?token=${localStorage.getItem("token")}`}
+                  type="video/mp4"
+                />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn-modal-download"
+                onClick={() => {
+                  handleDownloadVideo(previewModal.scenarioId, "completed");
+                }}
+              >
+                Download Video
+              </button>
+              <button className="btn-modal-close" onClick={closePreviewModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Message Modal */}
       <MessageModal
