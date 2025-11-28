@@ -116,6 +116,7 @@ const Dashboard = () => {
       const response = await fetch(`${config.API_BASE_URL}/scenario`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
         },
       });
       const data = await response.json();
