@@ -114,6 +114,8 @@ const Dashboard = () => {
   const fetchScenarios = async (isSilentRefresh = false) => {
     try {
       const response = await fetch(`${config.API_BASE_URL}/scenario`, {
+        method: "GET",
+        credentials: "include",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "application/json",
