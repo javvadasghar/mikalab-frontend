@@ -506,6 +506,15 @@
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .modal-video-preview .modal-header {
   padding: 24px 30px;
   background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);

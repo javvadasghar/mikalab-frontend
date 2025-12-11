@@ -27,6 +27,7 @@ const formatTime = (totalSeconds) => {
 const CreateScenario = () => {
   const navigate = useNavigate();
   const [scenarioName, setScenarioName] = useState("");
+  const [theme, setTheme] = useState("dark");
   const [stops, setStops] = useState([
     defaultStop(1),
     defaultStop(2),
@@ -56,13 +57,11 @@ const CreateScenario = () => {
     const total = stops.reduce((acc, s) => {
       const stay = Number(s.staySeconds) || 0;
       const between = Number(s.betweenSeconds) || 0;
-      const primaryEmergency = s.emergencyEnabled
-        ? Number(s.emergencySeconds) || 0
-        : 0;
+      // Emergency time is separate from stay/travel time
       const emergenciesSum = Array.isArray(s.emergencies)
         ? s.emergencies.reduce((ea, e) => ea + (Number(e.seconds) || 0), 0)
         : 0;
-      return acc + stay + between + primaryEmergency + emergenciesSum;
+      return acc + stay + between + emergenciesSum;
     }, 0);
     setTotalSeconds(total);
   }, [stops]);
@@ -168,6 +167,7 @@ const CreateScenario = () => {
         },
         body: JSON.stringify({
           name: scenarioName,
+          theme: theme,
           stops: stops.map((stop) => ({
             name: stop.name,
             durationSeconds: Number(stop.staySeconds) || 0,
@@ -314,9 +314,10 @@ const CreateScenario = () => {
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: 12,
+            // gap: 12,
           }}
         >
-          <div className="input-group" style={{ flex: 1, marginRight: 12 }}>
+          <div className="input-group" style={{ flex: 1 }}>
             <input
               type="text"
               placeholder="Enter the Scenario Name"
@@ -325,15 +326,32 @@ const CreateScenario = () => {
               required
             />
           </div>
+          <div className="input-group" style={{ width: 200 }}>
+            <select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              style={{
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid #e5e7eb",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              <option value="dark">Dark Theme</option>
+              <option value="light">Light Theme</option>
+            </select>
+          </div>
         </div>
 
         <h3>Stops</h3>
 
         <form onSubmit={handleSubmit}>
           <div
+            className="table-header"
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 150px 320px 290px",
+              gridTemplateColumns: "1fr 200px 230px 80px",
               padding: "12px",
               background: "#f8fafc",
               borderRadius: "8px 8px 0 0",
@@ -342,6 +360,7 @@ const CreateScenario = () => {
               fontSize: 14,
               fontWeight: 600,
               color: "#374151",
+              // gap: 12,
             }}
           >
             <div>
@@ -373,10 +392,11 @@ const CreateScenario = () => {
                 }}
               >
                 <div
+                  className="stop-grid"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1fr 200px 230px 80px",
-                    gap: 12,
+                    // gap: 12,
                     alignItems: "center",
                   }}
                 >
@@ -528,55 +548,62 @@ const CreateScenario = () => {
                         ? "0 0 8px 8px"
                         : "0",
                     background: "#fffaf0",
-                    display: "flex",
-                    gap: 12,
-                    alignItems: "center",
                   }}
                 >
-                  <div style={{ flex: 1 }}>
-                    <input
-                      type="text"
-                      placeholder="Emergency description"
-                      value={em.text}
-                      onChange={(e) =>
-                        updateEmergency(idx, ei, "text", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: 8,
-                        border: "1px solid #fbbf24",
-                        borderRadius: 6,
-                      }}
-                    />
-                  </div>
+                  <div
+                    className="emergency-grid"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 200px 80px",
+                      gap: 12,
+                      alignItems: "center",
+                    }}
+                  >
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Emergency description"
+                        value={em.text}
+                        onChange={(e) =>
+                          updateEmergency(idx, ei, "text", e.target.value)
+                        }
+                        style={{
+                          width: "100%",
+                          padding: 8,
+                          border: "1px solid #fbbf24",
+                          borderRadius: 6,
+                        }}
+                      />
+                    </div>
 
-                  <div style={{ width: 140 }}>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Duration (sec)"
-                      value={em.seconds}
-                      onChange={(e) =>
-                        updateEmergency(idx, ei, "seconds", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: 8,
-                        border: "1px solid #fbbf24",
-                        borderRadius: 6,
-                      }}
-                    />
-                  </div>
+                    <div>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Duration (sec)"
+                        value={em.seconds}
+                        onChange={(e) =>
+                          updateEmergency(idx, ei, "seconds", e.target.value)
+                        }
+                        style={{
+                          width: "100%",
+                          padding: 8,
+                          border: "1px solid #fbbf24",
+                          borderRadius: 6,
+                        }}
+                      />
+                    </div>
 
-                  <div>
-                    <button
-                      type="button"
-                      className="delete-btn"
-                      onClick={() => removeEmergency(idx, ei)}
-                      style={{ padding: "8px 12px" }}
-                    >
-                      🗑️
-                    </button>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      <button
+                        type="button"
+                        className="delete-btn"
+                        onClick={() => removeEmergency(idx, ei)}
+                        style={{ padding: "8px 12px" }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

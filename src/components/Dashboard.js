@@ -665,10 +665,6 @@ const Dashboard = () => {
         message={messageModal.message}
         type={messageModal.type}
       />
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 };

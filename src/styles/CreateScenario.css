@@ -155,9 +155,26 @@
   box-shadow: 0 5px 15px rgba(38, 166, 154, 0.3);
 }
 
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .scenario-form {
+    padding: 30px;
+    margin: 20px;
+  }
+}
+
 @media (max-width: 768px) {
   .scenario-form {
     padding: 20px;
+    margin: 15px;
+  }
+
+  .scenario-form h2 {
+    font-size: 24px;
+  }
+
+  .scenario-form h3 {
+    font-size: 18px;
   }
 
   .stop-row {
@@ -172,6 +189,130 @@
   .cancel-btn,
   .save-btn {
     width: 100%;
+    padding: 12px 20px;
+  }
+
+  .input-group input,
+  .stop-input input {
+    font-size: 14px;
+    padding: 12px 12px 12px 45px;
+  }
+
+  .add-stop-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .scenario-form {
+    padding: 15px;
+    margin: 10px;
+  }
+
+  .scenario-form h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .scenario-form h3 {
+    font-size: 16px;
+    margin: 20px 0 15px;
+  }
+
+  .input-group input,
+  .stop-input input {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .input-group input {
+    padding-left: 40px;
+  }
+
+  .input-icon {
+    font-size: 16px;
+    left: 12px;
+  }
+
+  .delete-btn {
+    padding: 10px 15px;
+    font-size: 16px;
+  }
+
+  .add-stop-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .cancel-btn,
+  .save-btn {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+
+  .table-header,
+  .stop-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .table-header > div {
+    display: none;
+  }
+
+  .table-header > div:first-child {
+    display: block;
+  }
+}
+
+/* Tablet responsive */
+@media (max-width: 768px) and (min-width: 481px) {
+  .table-header {
+    grid-template-columns: 2fr 1fr 1fr !important;
+  }
+
+  .table-header > div:last-child {
+    display: none;
+  }
+
+  .stop-grid {
+    grid-template-columns: 1fr 120px 120px 60px !important;
+  }
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 480px) {
+  .input-group[style*="width: 200px"] {
+    width: 100% !important;
+  }
+
+  div[style*="gap: 12"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  button[style*="padding: 10px 20px"] {
+    width: 100%;
+    justify-content: center;
+  }
+
+  div[style*="display: flex"][style*="gap: 12px"][style*="alignItems: center"] {
+    flex-direction: column !important;
+  }
+
+  div[style*="width: 140px"] {
+    width: 100% !important;
+  }
+
+  .emergency-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 768px) and (min-width: 481px) {
+  .emergency-grid {
+    grid-template-columns: 1fr 150px 60px !important;
   }
 }
 

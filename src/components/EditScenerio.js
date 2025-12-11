@@ -28,6 +28,7 @@ const EditScenario = () => {
   const { id } = useParams();
 
   const [scenarioName, setScenarioName] = useState("");
+  const [theme, setTheme] = useState("dark");
   const [stops, setStops] = useState([defaultStop(0)]);
   const [originalStops, setOriginalStops] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,13 +62,11 @@ const EditScenario = () => {
     const total = stops.reduce((acc, s) => {
       const stay = Number(s.staySeconds) || 0;
       const between = Number(s.betweenSeconds) || 0;
-      const primaryEmergency = s.emergencyEnabled
-        ? Number(s.emergencySeconds) || 0
-        : 0;
+      // Emergency time is separate from stay/travel time
       const emergenciesSum = Array.isArray(s.emergencies)
         ? s.emergencies.reduce((ea, e) => ea + (Number(e.seconds) || 0), 0)
         : 0;
-      return acc + stay + between + primaryEmergency + emergenciesSum;
+      return acc + stay + between + emergenciesSum;
     }, 0);
     setTotalSeconds(total);
   }, [stops]);
@@ -105,6 +104,7 @@ const EditScenario = () => {
 
       if (data.success && data.scenario) {
         setScenarioName(data.scenario.name || "");
+        setTheme(data.scenario.theme || "dark");
 
         const mapped = (data.scenario.stops || []).map((stop, i) => {
           let emergencies = [];
@@ -250,6 +250,7 @@ const EditScenario = () => {
         },
         body: JSON.stringify({
           name: scenarioName,
+          theme: theme,
           stops: payloadStops,
         }),
       });
@@ -424,9 +425,10 @@ const EditScenario = () => {
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: 12,
+            gap: 12,
           }}
         >
-          <div className="input-group" style={{ flex: 1, marginRight: 12 }}>
+          <div className="input-group" style={{ flex: 1 }}>
             <input
               type="text"
               placeholder="Enter the Scenario Name"
@@ -434,6 +436,22 @@ const EditScenario = () => {
               onChange={(e) => setScenarioName(e.target.value)}
               required
             />
+          </div>
+          <div className="input-group" style={{ width: 200 }}>
+            <select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              style={{
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid #e5e7eb",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              <option value="dark">Dark Theme</option>
+              <option value="light">Light Theme</option>
+            </select>
           </div>
         </div>
 
