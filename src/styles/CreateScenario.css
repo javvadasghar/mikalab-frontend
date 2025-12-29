@@ -71,7 +71,7 @@
 }
 
 .stop-row {
-  display: grid;
+  /* display: grid; */
   grid-template-columns: 1fr auto auto;
   gap: 15px;
   align-items: end;

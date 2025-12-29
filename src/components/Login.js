@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import config from "../config";
+import { userAPI } from "../services/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -15,19 +15,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${config.API_BASE_URL}/user/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
-      });
-
-      const data = await response.json();
+      const { data } = await userAPI.login(email, password);
 
       if (data.success && data.token) {
         // Store both token and user data
@@ -211,7 +199,7 @@ const Login = () => {
           className="text-center mt-4 mb-0"
           style={{ fontSize: "14px", color: "#9ca3af" }}
         >
-          © 2025 Mika WebApp
+          © 2026 Mika WebApp
         </p>
       </div>
     </div>

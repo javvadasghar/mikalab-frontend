@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { userAPI } from "../services/api";
 import "../styles/CreateScenario.css";
-import config from "../config";
 
 const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
   if (!isOpen) return null;
@@ -298,22 +298,13 @@ const NewUser = () => {
     }
 
     try {
-      const response = await fetch(`${config.API_BASE_URL}/user`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.toLowerCase().trim(),
-          password: password,
-          isAdmin: isAdmin,
-        }),
+      const { data } = await userAPI.createUser({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.toLowerCase().trim(),
+        password: password,
+        isAdmin: isAdmin,
       });
-
-      const data = await response.json();
 
       if (data.success) {
         showMessage(

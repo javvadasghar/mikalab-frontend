@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ConfirmModal, MessageModal } from "./Modals";
+import { scenarioAPI } from "../services/api";
 import "../styles/Dashboard.css";
 import config from "../config";
 
@@ -113,15 +114,7 @@ const Dashboard = () => {
 
   const fetchScenarios = async (isSilentRefresh = false) => {
     try {
-      const response = await fetch(`${config.API_BASE_URL}/scenario`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await response.json();
+      const { data } = await scenarioAPI.getAllScenarios();
       if (data.success) {
         setScenarios(data.scenarios);
         setFilteredScenarios(data.scenarios);
@@ -160,19 +153,7 @@ const Dashboard = () => {
 
     try {
       setDownloading(scenarioId);
-      const response = await fetch(
-        `${config.API_BASE_URL}/scenario/${scenarioId}/video/download`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Download failed");
-
-      const blob = await response.blob();
+      const blob = await scenarioAPI.downloadVideo(scenarioId);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -222,17 +203,7 @@ const Dashboard = () => {
             "info"
           );
 
-          const response = await fetch(
-            `${config.API_BASE_URL}/scenario/${scenarioId}`,
-            {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
-
-          const data = await response.json();
+          const { data } = await scenarioAPI.deleteScenario(scenarioId);
 
           if (data.success) {
             closeMessageModal();
@@ -481,7 +452,7 @@ const Dashboard = () => {
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "10px",
+                        marginRight: "10px",
                       }}
                     >
                       {getVideoStatusBadge(scenario.videoStatus)}

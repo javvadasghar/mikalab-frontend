@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { userAPI } from "../services/api";
 import "../styles/Dashboard.css";
-import config from "../config";
 
 const PAGE_SIZES = [8, 12, 20];
 
@@ -437,13 +437,7 @@ const ManageUsers = () => {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const res = await fetch(`${config.API_BASE_URL}/user`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await res.json();
+      const { data } = await userAPI.getAllUsers();
       if (data.success && Array.isArray(data.users)) {
         const filtered = data.users.filter(
           (u) => (u._id || u.id) !== currentUserId
@@ -492,17 +486,7 @@ const ManageUsers = () => {
 
     try {
       setDeletingUser(userToDelete.id);
-      const res = await fetch(
-        `${config.API_BASE_URL}/user/${userToDelete.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const data = await res.json();
+      const { data } = await userAPI.deleteUser(userToDelete.id);
       if (data.success) {
         setUsers((prev) =>
           prev.filter((u) => (u._id || u.id) !== userToDelete.id)
