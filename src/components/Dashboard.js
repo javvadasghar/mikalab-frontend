@@ -505,7 +505,7 @@ const Dashboard = () => {
                           <span className="stop-number">{index + 1}</span>
                           <span className="stop-name">{stop.name}</span>
                           <span className="stop-duration">
-                            {stop.durationSeconds}s
+                            {stop.staySeconds}s
                           </span>
                         </div>
                       ))}

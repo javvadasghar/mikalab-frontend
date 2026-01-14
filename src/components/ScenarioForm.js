@@ -5,11 +5,10 @@ import { scenarioAPI } from "../services/api";
 import "../styles/CreateScenario.css";
 import "../styles/Dashboard.css";
 
-// ============ UTILITIES ============
 const defaultStop = (id) => ({
   id: id || Date.now(),
   name: "",
-  staySeconds: 60,
+  staySeconds: 0,
   betweenSeconds: 0,
   emergencies: [],
 });
@@ -36,7 +35,6 @@ const calculateTotalSeconds = (stops) => {
 
 const transformStopForAPI = (stop) => ({
   name: stop.name,
-  durationSeconds: Number(stop.staySeconds) || 0,
   staySeconds: Number(stop.staySeconds) || 0,
   betweenSeconds: Number(stop.betweenSeconds) || 0,
   emergencyEnabled: !!(stop.emergencies && stop.emergencies.length > 0),
@@ -68,7 +66,6 @@ const updateCachedScenarios = (scenario, isEdit = false, scenarioId = null) => {
   }
 };
 
-// ============ HOOKS ============
 const useModal = () => {
   const [modal, setModal] = useState({
     isOpen: false,
@@ -88,7 +85,6 @@ const useModal = () => {
   return { modal, show, close };
 };
 
-// ============ MAIN COMPONENT ============
 const ScenarioForm = ({ mode = "create" }) => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -102,14 +98,11 @@ const ScenarioForm = ({ mode = "create" }) => {
       ? [defaultStop(1)]
       : [defaultStop(1), defaultStop(2), defaultStop(3)]
   );
-  const [originalStops, setOriginalStops] = useState([]);
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [totalSeconds, setTotalSeconds] = useState(0);
-  const [stopsModified, setStopsModified] = useState(false);
 
-  // Fetch scenario data in edit mode
   useEffect(() => {
     if (isEditMode && id) {
       fetchScenario();
@@ -117,33 +110,10 @@ const ScenarioForm = ({ mode = "create" }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEditMode]);
 
-  // Update total seconds when stops change
   useEffect(() => {
     setTotalSeconds(calculateTotalSeconds(stops));
   }, [stops]);
 
-  // Track if stops were modified in edit mode
-  useEffect(() => {
-    if (isEditMode && originalStops.length > 0) {
-      const normalize = (arr) =>
-        arr.map((s) => ({
-          name: s.name,
-          staySeconds: Number(s.staySeconds) || 0,
-          betweenSeconds: Number(s.betweenSeconds) || 0,
-          emergencies: (s.emergencies || []).map((e) => ({
-            text: e.text || "",
-            startSecond: Number(e.startSecond) || 0,
-            seconds: Number(e.seconds) || 0,
-          })),
-        }));
-      setStopsModified(
-        JSON.stringify(normalize(stops)) !==
-          JSON.stringify(normalize(originalStops))
-      );
-    }
-  }, [stops, originalStops, isEditMode]);
-
-  // ============ DATA FETCHING ============
   const fetchScenario = async () => {
     try {
       setLoading(true);
@@ -156,7 +126,7 @@ const ScenarioForm = ({ mode = "create" }) => {
         const mapped = (data.scenario.stops || []).map((stop, i) => ({
           id: i,
           name: stop.name || `Stop ${i + 1}`,
-          staySeconds: stop.staySeconds ?? stop.durationSeconds ?? 60,
+          staySeconds: stop.staySeconds ?? 0,
           betweenSeconds: stop.betweenSeconds ?? 0,
           emergencies: Array.isArray(stop.emergencies)
             ? stop.emergencies.map((e) => ({
@@ -168,7 +138,6 @@ const ScenarioForm = ({ mode = "create" }) => {
         }));
 
         setStops(mapped.length ? mapped : [defaultStop(1)]);
-        setOriginalStops(JSON.parse(JSON.stringify(mapped)));
       } else {
         setError(data.message || "Failed to load scenario");
       }
@@ -180,7 +149,6 @@ const ScenarioForm = ({ mode = "create" }) => {
     }
   };
 
-  // ============ STOP MANAGEMENT ============
   const updateStop = (stopId, field, value) => {
     setStops((prev) =>
       prev.map((stop) =>
@@ -197,7 +165,6 @@ const ScenarioForm = ({ mode = "create" }) => {
     }
   };
 
-  // ============ EMERGENCY MANAGEMENT ============
   const hasAnyEmergency = stops.some((s) => s.emergencies?.length > 0);
 
   const addEmergency = (index) => {
@@ -256,7 +223,6 @@ const ScenarioForm = ({ mode = "create" }) => {
     );
   };
 
-  // ============ VALIDATION ============
   const validateForm = () => {
     if (!scenarioName.trim()) {
       setError("Please enter a scenario name");
@@ -271,7 +237,6 @@ const ScenarioForm = ({ mode = "create" }) => {
     return true;
   };
 
-  // ============ FORM SUBMISSION ============
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -382,8 +347,10 @@ const ScenarioForm = ({ mode = "create" }) => {
       value={value}
       onChange={(e) => {
         const val = e.target.value;
-        if (val === "" || Number(val) >= 0) {
-          onChange(val === "" ? "" : Math.max(0, parseInt(val) || 0));
+        if (val === "" || (Number(val) >= 0 && Number(val) <= 999)) {
+          onChange(
+            val === "" ? "" : Math.min(999, Math.max(0, parseInt(val) || 0))
+          );
         }
       }}
       onBlur={(e) => {
@@ -517,6 +484,9 @@ const ScenarioForm = ({ mode = "create" }) => {
           }}
         >
           <div className="input-group" style={{ flex: 1 }}>
+            <label style={{ marginBottom: 2 }}>
+              <b> Scenario Name</b>
+            </label>
             <input
               type="text"
               placeholder="Enter the Scenario Name"
@@ -619,7 +589,7 @@ const ScenarioForm = ({ mode = "create" }) => {
                           stop.staySeconds,
                           (val) => updateStop(stop.id, "staySeconds", val),
                           (val) => updateStop(stop.id, "staySeconds", val),
-                          "60"
+                          "0"
                         )}
                       </div>
                     </div>
