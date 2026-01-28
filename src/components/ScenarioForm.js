@@ -492,10 +492,11 @@ const ScenarioForm = ({ mode = "create" }) => {
               placeholder="Enter the Scenario Name"
               value={scenarioName}
               onChange={(e) => setScenarioName(e.target.value)}
+              maxLength={100}
               required
             />
           </div>
-          <div className="input-group" style={{ width: 200 }}>
+          <div className="input-group" style={{ width: 200, marginTop: 20 }}>
             <select
               value={theme}
               onChange={(e) => setTheme(e.target.value)}

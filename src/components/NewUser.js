@@ -398,6 +398,7 @@ const NewUser = () => {
             placeholder="First Name *"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
+            maxLength={30}
             required
           />
         </div>
@@ -409,6 +410,7 @@ const NewUser = () => {
             placeholder="Last Name *"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
+            maxLength={30}
             required
           />
         </div>
@@ -431,6 +433,7 @@ const NewUser = () => {
             placeholder="Password (min 6 characters) *"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            maxLength={20}
             required
           />
         </div>
@@ -442,6 +445,7 @@ const NewUser = () => {
             placeholder="Confirm Password *"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
+            maxLength={20}
             required
           />
         </div>
