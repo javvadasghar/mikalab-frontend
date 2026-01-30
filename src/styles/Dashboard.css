@@ -188,6 +188,34 @@
   transform: translateY(-2px);
 }
 
+.btn-export-csv {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.8);
+  border: 2px solid rgba(16, 185, 129, 0.9);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.btn-export-csv:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 1);
+  border-color: rgba(16, 185, 129, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-export-csv:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-logout {
   display: flex;
   align-items: center;

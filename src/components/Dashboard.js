@@ -291,6 +291,92 @@ const Dashboard = () => {
     });
   };
 
+  const handleExportToCSV = () => {
+    if (scenarios.length === 0) {
+      showMessage("No Data", "No scenarios available to export", "warning");
+      return;
+    }
+
+    try {
+      const headers = [
+        "Scenario Name",
+        "Total Stops",
+        "Video Status",
+        "Theme",
+        "Created By",
+        "Created At",
+        "Updated By",
+        "Last Updated At",
+        "Stop Number",
+        "Stop Name",
+        "Stay Seconds",
+        "Between Seconds",
+        "Emergency Enabled",
+        "Emergency Seconds",
+        "Additional Emergencies",
+      ];
+
+      // Build CSV rows
+      const rows = [];
+      scenarios.forEach((scenario) => {
+        scenario.stops.forEach((stop, index) => {
+          // Format additional emergencies if they exist
+          const additionalEmergencies = stop.emergencies && stop.emergencies.length > 0
+            ? stop.emergencies
+                .map(
+                  (e) =>
+                    `"${e.text || 'No text'}" at ${e.startSecond}s for ${e.seconds}s`
+                )
+                .join("; ")
+            : "None";
+
+          const row = [
+            `"${scenario.name}"`,
+            scenario.stops.length,
+            scenario.videoStatus,
+            scenario.theme || "dark",
+            `"${scenario.createdByName || "Unknown"}"`,
+            scenario.createdAt ? formatDate(scenario.createdAt) : "N/A",
+            `"${scenario.updatedByName || ""}"`,
+            scenario.lastUpdatedAt ? formatDate(scenario.lastUpdatedAt) : "",
+            index + 1,
+            `"${stop.name}"`,
+            stop.staySeconds || 0,
+            stop.betweenSeconds || 0,
+            stop.emergencyEnabled ? "Yes" : "No",
+            stop.emergencySeconds || 0,
+            `"${additionalEmergencies}"`,
+          ];
+          rows.push(row.join(","));
+        });
+      });
+
+      const csvContent = [headers.join(","), ...rows].join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `scenarios_export_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showMessage(
+        "Success!",
+        `Exported ${scenarios.length} scenario(s) to CSV successfully!`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Error exporting to CSV:", error);
+      showMessage(
+        "Export Failed",
+        "Failed to export scenarios to CSV. Please try again.",
+        "error"
+      );
+    }
+  };
+
   return (
     <div className="dashboard-wrapper">
       <header className="dashboard-header">
@@ -336,6 +422,27 @@ const Dashboard = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+
+            <button
+              className="btn-export-csv"
+              onClick={handleExportToCSV}
+              disabled={scenarios.length === 0}
+              title="Export all scenarios to CSV"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Export Scenarios
+            </button>
 
             <button
               className="btn-new-scenario"
