@@ -6,4 +6,3 @@ const CreateScenario = () => {
 };
 
 export default CreateScenario;
-

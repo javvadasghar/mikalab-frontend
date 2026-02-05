@@ -21,7 +21,6 @@
   - Edit existing scenarios
   - Define stop details (name, stay duration, travel time)
   - Add emergency situations
-  - Real-time duration calculation
 
 - **Video Management**
 

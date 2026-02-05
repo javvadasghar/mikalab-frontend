@@ -8,8 +8,8 @@ import "../styles/Dashboard.css";
 const defaultStop = (id) => ({
   id: id || Date.now(),
   name: "",
-  staySeconds: 0,
-  betweenSeconds: 0,
+  travelTimeToNextStop: 0,
+  stayTimeAtStop: 0,
   emergencies: [],
 });
 
@@ -24,19 +24,19 @@ const formatTime = (totalSeconds) => {
 
 const calculateTotalSeconds = (stops) => {
   return stops.reduce((total, stop) => {
-    const stay = Number(stop.staySeconds) || 0;
-    const between = Number(stop.betweenSeconds) || 0;
+    const travel = Number(stop.travelTimeToNextStop) || 0;
+    const stay = Number(stop.stayTimeAtStop) || 0;
     const emergencies = Array.isArray(stop.emergencies)
       ? stop.emergencies.reduce((sum, e) => sum + (Number(e.seconds) || 0), 0)
       : 0;
-    return total + stay + between + emergencies;
+    return total + travel + stay + emergencies;
   }, 0);
 };
 
 const transformStopForAPI = (stop) => ({
   name: stop.name,
-  staySeconds: Number(stop.staySeconds) || 0,
-  betweenSeconds: Number(stop.betweenSeconds) || 0,
+  travelTimeToNextStop: Number(stop.travelTimeToNextStop) || 0,
+  stayTimeAtStop: Number(stop.stayTimeAtStop) || 0,
   emergencyEnabled: !!(stop.emergencies && stop.emergencies.length > 0),
   emergencySeconds: Number(stop.emergencies?.[0]?.seconds) || 0,
   emergencies: (stop.emergencies || []).map((e) => ({
@@ -126,8 +126,8 @@ const ScenarioForm = ({ mode = "create" }) => {
         const mapped = (data.scenario.stops || []).map((stop, i) => ({
           id: i,
           name: stop.name || `Stop ${i + 1}`,
-          staySeconds: stop.staySeconds ?? 0,
-          betweenSeconds: stop.betweenSeconds ?? 0,
+          travelTimeToNextStop: stop.travelTimeToNextStop ?? 0,
+          stayTimeAtStop: stop.stayTimeAtStop ?? 0,
           emergencies: Array.isArray(stop.emergencies)
             ? stop.emergencies.map((e) => ({
                 text: e.text || "",
@@ -382,6 +382,8 @@ const ScenarioForm = ({ mode = "create" }) => {
       <input
         type={type}
         min={type === "number" ? "0" : undefined}
+        max={type === "number" ? "999" : undefined}
+        maxLength={type === "text" ? 50 : undefined}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
@@ -538,10 +540,10 @@ const ScenarioForm = ({ mode = "create" }) => {
                 Stop Name <span style={{ color: "#ef4444" }}>*</span>
               </div>
               <div style={{ flex: 1, minWidth: 120 }}>
-                Travel Time (sec) <span style={{ color: "#ef4444" }}>*</span>
+                Travel Time to Next Stop (sec) <span style={{ color: "#ef4444" }}>*</span>
               </div>
               <div style={{ flex: 1, minWidth: 150 }}>
-                Stay Duration (sec) <span style={{ color: "#ef4444" }}>*</span>
+                Stay Time at Stop (sec) <span style={{ color: "#ef4444" }}>*</span>
               </div>
               <div style={{ width: 80 }}></div>
             </div>
@@ -579,6 +581,7 @@ const ScenarioForm = ({ mode = "create" }) => {
                           onChange={(e) =>
                             updateStop(stop.id, "name", e.target.value)
                           }
+                          maxLength={30}
                           required
                         />
                       </div>
@@ -587,9 +590,9 @@ const ScenarioForm = ({ mode = "create" }) => {
                     <div style={{ flex: 1, minWidth: 120 }}>
                       <div className="stop-input">
                         {renderNumberInput(
-                          stop.staySeconds,
-                          (val) => updateStop(stop.id, "staySeconds", val),
-                          (val) => updateStop(stop.id, "staySeconds", val),
+                          stop.travelTimeToNextStop,
+                          (val) => updateStop(stop.id, "travelTimeToNextStop", val),
+                          (val) => updateStop(stop.id, "travelTimeToNextStop", val),
                           "0"
                         )}
                       </div>
@@ -598,9 +601,9 @@ const ScenarioForm = ({ mode = "create" }) => {
                     <div style={{ flex: 1, minWidth: 150 }}>
                       <div className="stop-input">
                         {renderNumberInput(
-                          stop.betweenSeconds,
-                          (val) => updateStop(stop.id, "betweenSeconds", val),
-                          (val) => updateStop(stop.id, "betweenSeconds", val),
+                          stop.stayTimeAtStop,
+                          (val) => updateStop(stop.id, "stayTimeAtStop", val),
+                          (val) => updateStop(stop.id, "stayTimeAtStop", val),
                           "30"
                         )}
                       </div>
@@ -696,10 +699,7 @@ const ScenarioForm = ({ mode = "create" }) => {
                           border: "1px solid #fbbf24",
                         }}
                       >
-                        💡 <strong>Tip:</strong> Emergency pauses the timeline
-                        at the specified time. E.g., 5s travel + emergency at 4s
-                        for 3s = video shows 0-4s travel, 4-7s emergency, 7-8s
-                        remaining travel (total 8s).
+                        💡 <strong>Note:</strong> Emergency interrupts the video at your chosen time and adds extra seconds. The video then continues from where it paused.
                       </div>
                     )}
                     <div
@@ -715,7 +715,7 @@ const ScenarioForm = ({ mode = "create" }) => {
                         "text",
                         em.text,
                         (e) => updateEmergency(idx, ei, "text", e.target.value),
-                        "Emergency description",
+                        "e.g., Attention passengers - remain calm and stay seated",
                         undefined
                       )}
 

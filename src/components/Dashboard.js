@@ -285,10 +285,10 @@ const Dashboard = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return date.toLocaleString("en-US", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   const handleExportToCSV = () => {
@@ -301,51 +301,30 @@ const Dashboard = () => {
       const headers = [
         "Scenario Name",
         "Total Stops",
-        "Video Status",
-        "Theme",
         "Created By",
         "Created At",
         "Updated By",
         "Last Updated At",
-        "Stop Number",
         "Stop Name",
-        "Stay Seconds",
-        "Between Seconds",
-        "Emergency Enabled",
-        "Emergency Seconds",
-        "Additional Emergencies",
+        "Travel Time to Next Stop (sec)",
+        "Stay Time at Stop (sec)",
       ];
 
       // Build CSV rows
       const rows = [];
+      console.log('DEBUG: Building CSV rows, scenarios count:', scenarios.length);
       scenarios.forEach((scenario) => {
         scenario.stops.forEach((stop, index) => {
-          // Format additional emergencies if they exist
-          const additionalEmergencies = stop.emergencies && stop.emergencies.length > 0
-            ? stop.emergencies
-                .map(
-                  (e) =>
-                    `"${e.text || 'No text'}" at ${e.startSecond}s for ${e.seconds}s`
-                )
-                .join("; ")
-            : "None";
-
           const row = [
             `"${scenario.name}"`,
             scenario.stops.length,
-            scenario.videoStatus,
-            scenario.theme || "dark",
             `"${scenario.createdByName || "Unknown"}"`,
             scenario.createdAt ? formatDate(scenario.createdAt) : "N/A",
-            `"${scenario.updatedByName || ""}"`,
+            `"${scenario.updatedByName || "Unknown"}"`,
             scenario.lastUpdatedAt ? formatDate(scenario.lastUpdatedAt) : "",
-            index + 1,
             `"${stop.name}"`,
-            stop.staySeconds || 0,
-            stop.betweenSeconds || 0,
-            stop.emergencyEnabled ? "Yes" : "No",
-            stop.emergencySeconds || 0,
-            `"${additionalEmergencies}"`,
+            stop.travelTimeToNextStop || 0,
+            stop.stayTimeAtStop || 0,
           ];
           rows.push(row.join(","));
         });
@@ -612,7 +591,7 @@ const Dashboard = () => {
                           <span className="stop-number">{index + 1}</span>
                           <span className="stop-name">{stop.name}</span>
                           <span className="stop-duration">
-                            {stop.staySeconds}s
+                            {stop.travelTimeToNextStop}s
                           </span>
                         </div>
                       ))}
