@@ -62,8 +62,8 @@
 .input-group input:focus,
 .stop-input input:focus {
   outline: none;
-  border-color: #5b6fe8;
-  box-shadow: 0 0 0 3px rgba(91, 111, 232, 0.1);
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
 }
 
 .stop-input input {
@@ -92,14 +92,14 @@
 }
 
 .delete-btn:hover {
-  background: #5eb3d6;
-  ;
+  background: #fecaca;
+  color: #f87171;
   transform: translateY(-2px);
 }
 
 .add-stop-btn {
   padding: 12px 30px;
-  background: #5b6fe8;
+  background: #38bdf8;
   color: white;
   border: none;
   border-radius: 10px;
@@ -111,9 +111,9 @@
 }
 
 .add-stop-btn:hover {
-  background: #4a5dd8;
+  background: #0ea5e9;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(91, 111, 232, 0.3);
+  box-shadow: 0 5px 15px rgba(56, 189, 248, 0.3);
 }
 
 .form-actions {
@@ -136,23 +136,23 @@
 }
 
 .cancel-btn {
-  background: #e0e0e0;
-  color: #2c3e50;
+  background: #e5e7eb;
+  color: #374151;
 }
 
 .cancel-btn:hover {
-  background: #d0d0d0;
+  background: #d1d5db;
 }
 
 .save-btn {
-  background: #26a69a;
+  background: #34d399;
   color: white;
 }
 
 .save-btn:hover {
-  background: #1f8a7f;
+  background: #10b981;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(38, 166, 154, 0.3);
+  box-shadow: 0 5px 15px rgba(52, 211, 153, 0.3);
 }
 
 /* Responsive Design */

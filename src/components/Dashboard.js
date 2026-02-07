@@ -260,10 +260,10 @@ const Dashboard = () => {
 
   const getVideoStatusBadge = (status) => {
     const badges = {
-      pending: { text: "⏳ Pending", color: "#fbbf24" },
-      generating: { text: "🔄 Generating", color: "#3b82f6" },
-      completed: { text: "✅ Ready", color: "#10b981" },
-      failed: { text: "❌ Failed", color: "#ef4444" },
+      pending: { text: "⏳ Pending", color: "#9ca3af" },
+      generating: { text: "🔄 Generating", color: "#38bdf8" },
+      completed: { text: "✅ Ready", color: "#34d399" },
+      failed: { text: "❌ Failed", color: "#f87171" },
     };
     const badge = badges[status] || badges.pending;
     return (
@@ -427,18 +427,7 @@ const Dashboard = () => {
               className="btn-new-scenario"
               onClick={() => navigate("/create-scenario")}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-              >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              New Scenario
+              Create Scenario
             </button>
 
             {isAdmin && (
@@ -493,7 +482,7 @@ const Dashboard = () => {
                   width: "50px",
                   height: "50px",
                   border: "4px solid #e5e7eb",
-                  borderTopColor: "#5b6fe8",
+                  borderTopColor: "#38bdf8",
                   borderRadius: "50%",
                   animation: "spin 1s linear infinite",
                   marginBottom: "20px",
@@ -531,7 +520,15 @@ const Dashboard = () => {
           ) : (
             <div className="scenarios-grid">
               {filteredScenarios.map((scenario) => (
-                <div key={scenario._id} className="scenario-card">
+                <div 
+                  key={scenario._id} 
+                  className="scenario-card"
+                  style={{
+                    opacity: scenario.videoStatus === "generating" || scenario.videoStatus === "pending" ? 0.7 : 1,
+                    pointerEvents: scenario.videoStatus === "generating" || scenario.videoStatus === "pending" ? "none" : "auto",
+                    transition: "opacity 0.3s ease",
+                  }}
+                >
                   <div className="scenario-header">
                     <h3>{scenario.name}</h3>
                     <div
@@ -590,9 +587,6 @@ const Dashboard = () => {
                         <div key={index} className="stop-item">
                           <span className="stop-number">{index + 1}</span>
                           <span className="stop-name">{stop.name}</span>
-                          <span className="stop-duration">
-                            {stop.travelTimeToNextStop}s
-                          </span>
                         </div>
                       ))}
                     </div>

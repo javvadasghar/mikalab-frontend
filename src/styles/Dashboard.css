@@ -85,7 +85,7 @@
 }
 
 .stop-number {
-  background: #007bff;
+  background: #38bdf8;
   color: white;
   width: 24px;
   height: 24px;
@@ -100,12 +100,12 @@
 
 .dashboard-wrapper {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #f8fafc;
 }
 
 .dashboard-header {
-  background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);
-  box-shadow: 0 4px 12px rgba(88, 101, 242, 0.2);
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 0;
   position: sticky;
   top: 0;
@@ -170,11 +170,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #38bdf8;
+  border: 2px solid #38bdf8;
   color: white;
   padding: 12px 24px;
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -183,20 +183,21 @@
 }
 
 .btn-new-scenario:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #0ea5e9;
+  border-color: #0ea5e9;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
 }
 
 .btn-export-csv {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(16, 185, 129, 0.8);
-  border: 2px solid rgba(16, 185, 129, 0.9);
+  background: #34d399;
+  border: 2px solid #34d399;
   color: white;
   padding: 12px 24px;
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -205,10 +206,10 @@
 }
 
 .btn-export-csv:hover:not(:disabled) {
-  background: rgba(16, 185, 129, 1);
-  border-color: rgba(16, 185, 129, 1);
+  background: #10b981;
+  border-color: #10b981;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
 }
 
 .btn-export-csv:disabled {
@@ -220,19 +221,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   color: white;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .btn-logout:hover {
-  background: rgba(239, 68, 68, 0.8);
-  border-color: rgba(239, 68, 68, 1);
+  background: #f87171;
+  border-color: #f87171;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.3);
 }
 
 .card {
@@ -342,45 +344,49 @@
 }
 
 .btn-edit {
-  background: #10b981;
+  background: #34d399;
   color: white;
 }
 
 .btn-edit:hover:not(:disabled) {
-  background: #059669;
+  background: #10b981;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
 }
 
 .btn-preview {
-  background: #3b82f6;
+  background: #38bdf8;
   color: white;
 }
 
 .btn-preview:hover:not(:disabled) {
-  background: #2563eb;
+  background: #0ea5e9;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
 }
 
 .btn-download {
-  background: #8b5cf6;
+  background: #38bdf8;
   color: white;
 }
 
 .btn-download:hover:not(:disabled) {
-  background: #7c3aed;
+  background: #0ea5e9;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
 }
 
 .btn-delete {
-  background: #ef4444;
+  background: #f87171;
   color: white;
   flex: 0.5;
   font-size: 18px;
 }
 
 .btn-delete:hover:not(:disabled) {
-  background: #dc2626;
+  background: #ef4444;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.3);
 }
 
 .btn-edit:disabled,
@@ -599,7 +605,7 @@
 }
 
 .btn-modal-download {
-  background: #8b5cf6;
+  background: #38bdf8;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -614,8 +620,9 @@
 }
 
 .btn-modal-download:hover {
-  background: #7c3aed;
+  background: #0ea5e9;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
 }
 
 .btn-modal-close {

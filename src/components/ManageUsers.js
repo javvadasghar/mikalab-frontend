@@ -55,7 +55,7 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, userName, isDeleting }) => {
             height="32"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#ef4444"
+            stroke="#f87171"
             strokeWidth="2"
           >
             <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -126,7 +126,7 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, userName, isDeleting }) => {
               flex: 1,
               padding: "12px 24px",
               border: "none",
-              background: "#ef4444",
+              background: "#f87171",
               borderRadius: 10,
               fontSize: 15,
               fontWeight: 600,
@@ -143,11 +143,11 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, userName, isDeleting }) => {
                 e.currentTarget.style.background = "#dc2626";
                 e.currentTarget.style.transform = "translateY(-1px)";
                 e.currentTarget.style.boxShadow =
-                  "0 4px 12px rgba(239, 68, 68, 0.4)";
+                  "0 4px 12px rgba(220, 38, 38, 0.4)";
               }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#ef4444";
+              e.currentTarget.style.background = "#f87171";
               e.currentTarget.style.transform = "translateY(0)";
               e.currentTarget.style.boxShadow = "none";
             }}
@@ -210,7 +210,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#10b981"
+              stroke="#34d399"
               strokeWidth="2"
             >
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -218,7 +218,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
             </svg>
           ),
           bg: "#d1fae5",
-          color: "#10b981",
+          color: "#34d399",
         };
       case "error":
         return {
@@ -228,7 +228,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#ef4444"
+              stroke="#f87171"
               strokeWidth="2"
             >
               <circle cx="12" cy="12" r="10"></circle>
@@ -237,7 +237,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
             </svg>
           ),
           bg: "#fee2e2",
-          color: "#ef4444",
+          color: "#f87171",
         };
       case "warning":
         return {
@@ -247,7 +247,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#f59e0b"
+              stroke="#d97706"
               strokeWidth="2"
             >
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -256,7 +256,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
             </svg>
           ),
           bg: "#fef3c7",
-          color: "#f59e0b",
+          color: "#d97706",
         };
       default:
         return {
@@ -266,7 +266,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#3b82f6"
+              stroke="#2563eb"
               strokeWidth="2"
             >
               <circle cx="12" cy="12" r="10"></circle>
@@ -275,7 +275,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
             </svg>
           ),
           bg: "#dbeafe",
-          color: "#3b82f6",
+          color: "#2563eb",
         };
     }
   };
@@ -440,7 +440,7 @@ const ManageUsers = () => {
       const { data } = await userAPI.getAllUsers();
       if (data.success && Array.isArray(data.users)) {
         const filtered = data.users.filter(
-          (u) => (u._id || u.id) !== currentUserId
+          (u) => (u._id || u.id) !== currentUserId,
         );
         setUsers(filtered);
       } else {
@@ -466,7 +466,7 @@ const ManageUsers = () => {
       showMessage(
         "Action Not Allowed",
         "You cannot delete your own account while logged in.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -489,14 +489,14 @@ const ManageUsers = () => {
       const { data } = await userAPI.deleteUser(userToDelete.id);
       if (data.success) {
         setUsers((prev) =>
-          prev.filter((u) => (u._id || u.id) !== userToDelete.id)
+          prev.filter((u) => (u._id || u.id) !== userToDelete.id),
         );
         closeDeleteModal();
         setTimeout(() => {
           showMessage(
             "Success!",
             `User "${userToDelete.name}" has been deleted successfully.`,
-            "success"
+            "success",
           );
         }, 200);
       } else {
@@ -505,7 +505,7 @@ const ManageUsers = () => {
           showMessage(
             "Delete Failed",
             data.message || "Failed to delete user. Please try again.",
-            "error"
+            "error",
           );
         }, 200);
       }
@@ -516,7 +516,7 @@ const ManageUsers = () => {
         showMessage(
           "Error",
           "Failed to delete user. Please check your connection and try again.",
-          "error"
+          "error",
         );
       }, 200);
     } finally {
@@ -569,7 +569,7 @@ const ManageUsers = () => {
               style={{ marginRight: 8 }}
               onClick={() => navigate("/new-user")}
             >
-              ➕ Create User
+              Create User
             </button>
 
             <button
@@ -711,7 +711,7 @@ const ManageUsers = () => {
                   width: 40,
                   height: 40,
                   border: "4px solid #e5e7eb",
-                  borderTopColor: "#5b6fe8",
+                  borderTopColor: "#38bdf8",
                   borderRadius: "50%",
                   animation: "spin 1s linear infinite",
                   margin: "0 auto 16px",

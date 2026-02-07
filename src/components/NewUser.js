@@ -16,7 +16,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#10b981"
+              stroke="#34d399"
               strokeWidth="2"
             >
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -24,7 +24,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
             </svg>
           ),
           bg: "#d1fae5",
-          color: "#10b981",
+          color: "#34d399",
         };
       case "error":
         return {
@@ -34,7 +34,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#ef4444"
+              stroke="#f87171"
               strokeWidth="2"
             >
               <circle cx="12" cy="12" r="10"></circle>
@@ -43,7 +43,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
             </svg>
           ),
           bg: "#fee2e2",
-          color: "#ef4444",
+          color: "#f87171",
         };
       case "warning":
         return {
@@ -72,7 +72,7 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#3b82f6"
+              stroke="#38bdf8"
               strokeWidth="2"
             >
               <circle cx="12" cy="12" r="10"></circle>
@@ -80,8 +80,8 @@ const MessageModal = ({ isOpen, onClose, title, message, type = "info" }) => {
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
           ),
-          bg: "#dbeafe",
-          color: "#3b82f6",
+          bg: "#e0f2fe",
+          color: "#38bdf8",
         };
     }
   };
@@ -501,7 +501,7 @@ const NewUser = () => {
             onClick={handleSubmit}
             disabled={saving}
           >
-            {saving ? "⏳ Creating..." : "👥 Create User"}
+            {saving ? "⏳ Creating..." : "Save"}
           </button>
         </div>
       </div>

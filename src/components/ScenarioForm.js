@@ -8,7 +8,7 @@ import "../styles/Dashboard.css";
 const defaultStop = (id) => ({
   id: id || Date.now(),
   name: "",
-  travelTimeToNextStop: 0,
+  travelTimeToNextStop: 60,
   stayTimeAtStop: 0,
   emergencies: [],
 });
@@ -23,9 +23,10 @@ const formatTime = (totalSeconds) => {
 };
 
 const calculateTotalSeconds = (stops) => {
-  return stops.reduce((total, stop) => {
-    const travel = Number(stop.travelTimeToNextStop) || 0;
-    const stay = Number(stop.stayTimeAtStop) || 0;
+  return stops.reduce((total, stop, index) => {
+    const isLastStop = index === stops.length - 1;
+    const travel = isLastStop ? 0 : (Number(stop.travelTimeToNextStop) || 0);
+    const stay = isLastStop ? 0 : (Number(stop.stayTimeAtStop) || 0);
     const emergencies = Array.isArray(stop.emergencies)
       ? stop.emergencies.reduce((sum, e) => sum + (Number(e.seconds) || 0), 0)
       : 0;
@@ -101,6 +102,7 @@ const ScenarioForm = ({ mode = "create" }) => {
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [emergencyError, setEmergencyError] = useState("");
   const [totalSeconds, setTotalSeconds] = useState(0);
 
   useEffect(() => {
@@ -126,7 +128,7 @@ const ScenarioForm = ({ mode = "create" }) => {
         const mapped = (data.scenario.stops || []).map((stop, i) => ({
           id: i,
           name: stop.name || `Stop ${i + 1}`,
-          travelTimeToNextStop: stop.travelTimeToNextStop ?? 0,
+          travelTimeToNextStop: Math.max(60, stop.travelTimeToNextStop ?? 60),
           stayTimeAtStop: stop.stayTimeAtStop ?? 0,
           emergencies: Array.isArray(stop.emergencies)
             ? stop.emergencies.map((e) => ({
@@ -192,17 +194,43 @@ const ScenarioForm = ({ mode = "create" }) => {
 
         return {
           ...stop,
-          emergencies: stop.emergencies.map((emergency, ei) =>
-            ei === emergencyIndex
-              ? {
-                  ...emergency,
-                  [field]:
-                    field === "seconds" || field === "startSecond"
-                      ? Math.max(0, Number(value || 0))
-                      : value,
-                }
-              : emergency
-          ),
+          emergencies: stop.emergencies.map((emergency, ei) => {
+            if (ei !== emergencyIndex) return emergency;
+            if (value === "") {
+              return {
+                ...emergency,
+                [field]: "",
+              };
+            }
+            const numValue = Math.max(0, Number(value || 0));
+            if (field === "seconds" || field === "startSecond") {
+              const updatedEmergency = {
+                ...emergency,
+                [field]: numValue,
+              };
+              const interruptAt = field === "startSecond" ? numValue : updatedEmergency.startSecond;
+              const duration = field === "seconds" ? Math.max(10, numValue) : updatedEmergency.seconds;
+              
+              if (interruptAt + duration > totalSeconds) {
+                setEmergencyError(`Emergency cannot exceed scenario duration. Total: ${totalSeconds}s, Current: ${interruptAt + duration}s`);
+                setTimeout(() => setEmergencyError(""), 5000);
+                return emergency;
+              }
+              
+              if (interruptAt >= totalSeconds) {
+                setEmergencyError(`Interrupt time must be less than total duration (${totalSeconds}s)`);
+                setTimeout(() => setEmergencyError(""), 5000);
+                return emergency;
+              }
+              setEmergencyError("");
+              return updatedEmergency;
+            }
+            
+            return {
+              ...emergency,
+              [field]: value,
+            };
+          }),
         };
       })
     );
@@ -336,26 +364,39 @@ const ScenarioForm = ({ mode = "create" }) => {
     onChange,
     onBlur,
     placeholder,
-    isRequired = true
+    isRequired = true,
+    minValue = 0
   ) => (
     <input
       type="number"
-      min="0"
+      min={minValue}
       max="999"
       step="1"
       placeholder={placeholder}
       value={value}
+      onKeyDown={(e) => {
+        if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
+          e.preventDefault();
+        }
+      }}
+      onPaste={(e) => {
+        const pastedData = e.clipboardData.getData('text');
+        if (!/^\d+$/.test(pastedData)) {
+          e.preventDefault();
+        }
+      }}
       onChange={(e) => {
-        const val = e.target.value;
-        if (val === "" || (Number(val) >= 0 && Number(val) <= 999)) {
-          onChange(
-            val === "" ? "" : Math.min(999, Math.max(0, parseInt(val) || 0))
-          );
+        const val = e.target.value.replace(/^0+/, '') || '';
+        if (val === "" || (/^\d+$/.test(val) && Number(val) >= 0 && Number(val) <= 999)) {
+          onChange(val === "" ? "" : parseInt(val) || "");
         }
       }}
       onBlur={(e) => {
-        if (e.target.value === "") {
-          onBlur(0);
+        const val = e.target.value;
+        if (val === "" || Number(val) < minValue) {
+          onBlur(minValue);
+        } else {
+          onBlur(Math.min(999, Math.max(minValue, parseInt(val) || minValue)));
         }
       }}
       required={isRequired}
@@ -368,11 +409,12 @@ const ScenarioForm = ({ mode = "create" }) => {
     value,
     onChange,
     placeholder,
-    title
+    title,
+    minValue = 0
   ) => (
     <div
       style={{
-        width: type === "text" ? undefined : 140,
+        width: type === "text" ? undefined : 160,
         flex: type === "text" ? 1 : undefined,
       }}
     >
@@ -381,12 +423,39 @@ const ScenarioForm = ({ mode = "create" }) => {
       </label>
       <input
         type={type}
-        min={type === "number" ? "0" : undefined}
+        min={type === "number" ? minValue : undefined}
         max={type === "number" ? "999" : undefined}
         maxLength={type === "text" ? 50 : undefined}
         placeholder={placeholder}
         value={value}
-        onChange={onChange}
+        onKeyDown={type === "number" ? (e) => {
+          if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
+            e.preventDefault();
+          }
+        } : undefined}
+        onPaste={type === "number" ? (e) => {
+          const pastedData = e.clipboardData.getData('text');
+          if (!/^\d+$/.test(pastedData)) {
+            e.preventDefault();
+          }
+        } : undefined}
+        onChange={type === "number" ? (e) => {
+          const val = e.target.value.replace(/^0+/, '') || '';
+          if (val === "" || (/^\d+$/.test(val) && Number(val) >= 0 && Number(val) <= 999)) {
+            const processedVal = val === "" ? "" : parseInt(val) || "";
+            onChange({ target: { value: processedVal.toString() } });
+          }
+        } : onChange}
+        onBlur={type === "number" ? (e) => {
+          const val = e.target.value;
+          if (val === "" || Number(val) < minValue) {
+            const newVal = minValue;
+            onChange({ target: { value: newVal.toString() } });
+          } else {
+            const clampedVal = Math.min(999, Math.max(minValue, parseInt(val) || minValue));
+            onChange({ target: { value: clampedVal.toString() } });
+          }
+        } : undefined}
         style={{
           width: "100%",
           padding: 8,
@@ -398,7 +467,6 @@ const ScenarioForm = ({ mode = "create" }) => {
     </div>
   );
 
-  // ============ RENDER ============
   if (loading) {
     return (
       <div className="dashboard-wrapper">
@@ -460,7 +528,14 @@ const ScenarioForm = ({ mode = "create" }) => {
         </div>
       </header>
 
-      <div className="scenario-form">
+      <div 
+        className="scenario-form"
+        style={{
+          opacity: saving ? 0.5 : 1,
+          pointerEvents: saving ? 'none' : 'auto',
+          transition: 'opacity 0.3s ease',
+        }}
+      >
         {error && (
           <div
             style={{
@@ -588,25 +663,39 @@ const ScenarioForm = ({ mode = "create" }) => {
                     </div>
 
                     <div style={{ flex: 1, minWidth: 120 }}>
-                      <div className="stop-input">
-                        {renderNumberInput(
-                          stop.travelTimeToNextStop,
-                          (val) => updateStop(stop.id, "travelTimeToNextStop", val),
-                          (val) => updateStop(stop.id, "travelTimeToNextStop", val),
-                          "0"
-                        )}
-                      </div>
+                      {idx === stops.length - 1 ? (
+                        <div style={{ color: "#9ca3af", fontSize: 14, fontStyle: "italic", padding: 8 }}>
+                          N/A
+                        </div>
+                      ) : (
+                        <div className="stop-input">
+                          {renderNumberInput(
+                            stop.travelTimeToNextStop,
+                            (val) => updateStop(stop.id, "travelTimeToNextStop", val),
+                            (val) => updateStop(stop.id, "travelTimeToNextStop", val),
+                            "60",
+                            true,
+                            60
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ flex: 1, minWidth: 150 }}>
-                      <div className="stop-input">
-                        {renderNumberInput(
-                          stop.stayTimeAtStop,
-                          (val) => updateStop(stop.id, "stayTimeAtStop", val),
-                          (val) => updateStop(stop.id, "stayTimeAtStop", val),
-                          "30"
-                        )}
-                      </div>
+                      {idx === stops.length - 1 ? (
+                        <div style={{ color: "#9ca3af", fontSize: 14, fontStyle: "italic", padding: 8 }}>
+                          N/A
+                        </div>
+                      ) : (
+                        <div className="stop-input">
+                          {renderNumberInput(
+                            stop.stayTimeAtStop,
+                            (val) => updateStop(stop.id, "stayTimeAtStop", val),
+                            (val) => updateStop(stop.id, "stayTimeAtStop", val),
+                            "30"
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ display: "flex", gap: 4, width: 80 }}>
@@ -623,71 +712,26 @@ const ScenarioForm = ({ mode = "create" }) => {
                       )}
                     </div>
                   </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      marginTop: 12,
-                    }}
-                  >
-                    {!hasAnyEmergency && (
-                      <button
-                        type="button"
-                        onClick={() => addEmergency(idx)}
-                        style={{
-                          position: "relative",
-                          background: "#dc2626",
-                          color: "white",
-                          border: "3px solid #991b1b",
-                          padding: "8px 16px",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          fontWeight: 900,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          boxShadow:
-                            "0 0 20px rgba(220, 38, 38, 0.5), inset 0 -3px 0 rgba(0,0,0,0.2)",
-                          transition: "all 0.2s ease",
-                          textTransform: "uppercase",
-                          letterSpacing: "1px",
-                          animation: "pulse 2s infinite",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "scale(1.05)";
-                          e.currentTarget.style.boxShadow =
-                            "0 0 30px rgba(220, 38, 38, 0.7), inset 0 -3px 0 rgba(0,0,0,0.2)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "scale(1)";
-                          e.currentTarget.style.boxShadow =
-                            "0 0 20px rgba(220, 38, 38, 0.5), inset 0 -3px 0 rgba(0,0,0,0.2)";
-                        }}
-                      >
-                        🚨 Add Emergency
-                      </button>
-                    )}
-                  </div>
                 </div>
+              </React.Fragment>
+            ))}
+          </div>
 
-                {(stop.emergencies || []).map((em, ei) => (
+          {stops.some(stop => stop.emergencies?.length > 0) && (
+            <div style={{ marginBottom: 12 }}>
+              {stops.map((stop, idx) => 
+                (stop.emergencies || []).map((em, ei) => (
                   <div
                     key={`em-${idx}-${ei}`}
                     style={{
                       padding: 12,
                       border: "1px solid #f3a683",
-                      borderTop: "1px dashed #f3a683",
-                      borderRadius:
-                        ei === (stop.emergencies || []).length - 1 &&
-                        idx === stops.length - 1
-                          ? "0 0 8px 8px"
-                          : "0",
+                      borderRadius: "8px",
                       background: "#fffaf0",
+                      marginBottom: 12,
                     }}
                   >
-                    {ei === 0 && (
+                    {idx === 0 && ei === 0 && (
                       <div
                         style={{
                           fontSize: 12,
@@ -715,12 +759,12 @@ const ScenarioForm = ({ mode = "create" }) => {
                         "text",
                         em.text,
                         (e) => updateEmergency(idx, ei, "text", e.target.value),
-                        "e.g., Attention passengers - remain calm and stay seated",
+                        "e.g., Fire Ahead",
                         undefined
                       )}
 
                       {renderEmergencyInput(
-                        "Start At (sec)",
+                        "Interrupt At (sec)",
                         "number",
                         em.startSecond,
                         (e) =>
@@ -730,18 +774,19 @@ const ScenarioForm = ({ mode = "create" }) => {
                             "startSecond",
                             e.target.value
                           ),
-                        "Start",
-                        "Absolute time in video when emergency starts"
+                        "120",
+                        "Time in video when emergency interrupts and displays"
                       )}
 
                       {renderEmergencyInput(
-                        "Duration (sec)",
+                        "Display Duration (sec)",
                         "number",
                         em.seconds,
                         (e) =>
                           updateEmergency(idx, ei, "seconds", e.target.value),
-                        "Duration",
-                        "How long the emergency displays"
+                        "10",
+                        "How long the emergency message displays before video resumes",
+                        10
                       )}
 
                       <div
@@ -762,11 +807,70 @@ const ScenarioForm = ({ mode = "create" }) => {
                         </button>
                       </div>
                     </div>
+                    {emergencyError && (
+                      <div
+                        style={{
+                          padding: "10px 12px",
+                          backgroundColor: "#fee2e2",
+                          color: "#dc2626",
+                          borderRadius: "6px",
+                          marginTop: "8px",
+                          border: "1px solid #fca5a5",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                        }}
+                      >
+                        ⚠️ {emergencyError}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </React.Fragment>
-            ))}
-          </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {!hasAnyEmergency && (
+            <div style={{ margin: "12px 0", display: "flex", justifyContent: "right" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  addEmergency(0);
+                }}
+                style={{
+                  position: "relative",
+                  background: "#f87171",
+                  color: "white",
+                  border: "3px solid #dc2626",
+                  padding: "12px 24px",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 900,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  boxShadow:
+                    "0 0 20px rgba(220, 38, 38, 0.5), inset 0 -3px 0 rgba(0,0,0,0.2)",
+                  transition: "all 0.2s ease",
+                  textTransform: "uppercase",
+                  letterSpacing: "1px",
+                  animation: "pulse 2s infinite",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                  e.currentTarget.style.boxShadow =
+                    "0 0 30px rgba(220, 38, 38, 0.7), inset 0 -3px 0 rgba(0,0,0,0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.boxShadow =
+                    "0 0 20px rgba(220, 38, 38, 0.5), inset 0 -3px 0 rgba(0,0,0,0.2)";
+                }}
+              >
+                🚨 Add Emergency
+              </button>
+            </div>
+          )}
 
           <div style={{ marginBottom: 12 }}>
             <button
@@ -795,8 +899,8 @@ const ScenarioForm = ({ mode = "create" }) => {
                   ? "Updating..."
                   : "Saving..."
                 : isEditMode
-                ? "Update Scenario"
-                : "Save Scenario"}
+                ? "Update"
+                : "Save"}
             </button>
             <div
               style={{

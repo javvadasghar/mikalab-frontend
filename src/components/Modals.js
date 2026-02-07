@@ -21,7 +21,7 @@ export const ConfirmModal = ({
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#ef4444"
+              stroke="#f87171"
               strokeWidth="2"
             >
               <circle cx="12" cy="12" r="10"></circle>
@@ -30,7 +30,7 @@ export const ConfirmModal = ({
             </svg>
           ),
           bg: "#fee2e2",
-          color: "#ef4444",
+          color: "#f87171",
         };
       case "warning":
         return {
@@ -40,7 +40,7 @@ export const ConfirmModal = ({
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#f59e0b"
+              stroke="#d97706"
               strokeWidth="2"
             >
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -49,7 +49,7 @@ export const ConfirmModal = ({
             </svg>
           ),
           bg: "#fef3c7",
-          color: "#f59e0b",
+          color: "#d97706",
         };
       default:
         return {
@@ -59,7 +59,7 @@ export const ConfirmModal = ({
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#3b82f6"
+              stroke="#2563eb"
               strokeWidth="2"
             >
               <circle cx="12" cy="12" r="10"></circle>
@@ -68,7 +68,7 @@ export const ConfirmModal = ({
             </svg>
           ),
           bg: "#dbeafe",
-          color: "#3b82f6",
+          color: "#2563eb",
         };
     }
   };
@@ -241,7 +241,7 @@ export const MessageModal = ({
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#10b981"
+              stroke="#34d399"
               strokeWidth="2"
             >
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -249,7 +249,7 @@ export const MessageModal = ({
             </svg>
           ),
           bg: "#d1fae5",
-          color: "#10b981",
+          color: "#34d399",
         };
       case "error":
         return {
@@ -259,7 +259,7 @@ export const MessageModal = ({
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#ef4444"
+              stroke="#f87171"
               strokeWidth="2"
             >
               <circle cx="12" cy="12" r="10"></circle>
@@ -268,7 +268,7 @@ export const MessageModal = ({
             </svg>
           ),
           bg: "#fee2e2",
-          color: "#ef4444",
+          color: "#f87171",
         };
       case "warning":
         return {
@@ -278,7 +278,7 @@ export const MessageModal = ({
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#f59e0b"
+              stroke="#d97706"
               strokeWidth="2"
             >
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -297,7 +297,7 @@ export const MessageModal = ({
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#3b82f6"
+              stroke="#38bdf8"
               strokeWidth="2"
             >
               <circle cx="12" cy="12" r="10"></circle>
@@ -305,8 +305,8 @@ export const MessageModal = ({
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
           ),
-          bg: "#dbeafe",
-          color: "#3b82f6",
+          bg: "#e0f2fe",
+          color: "#38bdf8",
         };
     }
   };
