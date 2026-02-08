@@ -25,8 +25,8 @@ const formatTime = (totalSeconds) => {
 const calculateTotalSeconds = (stops) => {
   return stops.reduce((total, stop, index) => {
     const isLastStop = index === stops.length - 1;
-    const travel = isLastStop ? 0 : (Number(stop.travelTimeToNextStop) || 0);
-    const stay = isLastStop ? 0 : (Number(stop.stayTimeAtStop) || 0);
+    const travel = isLastStop ? 0 : Number(stop.travelTimeToNextStop) || 0;
+    const stay = isLastStop ? 0 : Number(stop.stayTimeAtStop) || 0;
     const emergencies = Array.isArray(stop.emergencies)
       ? stop.emergencies.reduce((sum, e) => sum + (Number(e.seconds) || 0), 0)
       : 0;
@@ -55,7 +55,7 @@ const updateCachedScenarios = (scenario, isEdit = false, scenarioId = null) => {
     const scenarios = JSON.parse(cached);
     if (isEdit) {
       const updated = scenarios.map((s) =>
-        s._id === scenarioId ? scenario : s
+        s._id === scenarioId ? scenario : s,
       );
       localStorage.setItem("scenarios", JSON.stringify(updated));
     } else {
@@ -97,7 +97,7 @@ const ScenarioForm = ({ mode = "create" }) => {
   const [stops, setStops] = useState(
     isEditMode
       ? [defaultStop(1)]
-      : [defaultStop(1), defaultStop(2), defaultStop(3)]
+      : [defaultStop(1), defaultStop(2), defaultStop(3)],
   );
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
@@ -154,8 +154,8 @@ const ScenarioForm = ({ mode = "create" }) => {
   const updateStop = (stopId, field, value) => {
     setStops((prev) =>
       prev.map((stop) =>
-        stop.id === stopId ? { ...stop, [field]: value } : stop
-      )
+        stop.id === stopId ? { ...stop, [field]: value } : stop,
+      ),
     );
   };
 
@@ -182,8 +182,8 @@ const ScenarioForm = ({ mode = "create" }) => {
                 { text: "", startSecond: 0, seconds: 10 },
               ],
             }
-          : s
-      )
+          : s,
+      ),
     );
   };
 
@@ -208,31 +208,41 @@ const ScenarioForm = ({ mode = "create" }) => {
                 ...emergency,
                 [field]: numValue,
               };
-              const interruptAt = field === "startSecond" ? numValue : updatedEmergency.startSecond;
-              const duration = field === "seconds" ? Math.max(10, numValue) : updatedEmergency.seconds;
-              
+              const interruptAt =
+                field === "startSecond"
+                  ? numValue
+                  : updatedEmergency.startSecond;
+              const duration =
+                field === "seconds"
+                  ? Math.max(10, numValue)
+                  : updatedEmergency.seconds;
+
               if (interruptAt + duration > totalSeconds) {
-                setEmergencyError(`Emergency cannot exceed scenario duration. Total: ${totalSeconds}s, Current: ${interruptAt + duration}s`);
+                setEmergencyError(
+                  `Emergency cannot exceed scenario duration. Total: ${totalSeconds}s, Current: ${interruptAt + duration}s`,
+                );
                 setTimeout(() => setEmergencyError(""), 5000);
                 return emergency;
               }
-              
+
               if (interruptAt >= totalSeconds) {
-                setEmergencyError(`Interrupt time must be less than total duration (${totalSeconds}s)`);
+                setEmergencyError(
+                  `Interrupt time must be less than total duration (${totalSeconds}s)`,
+                );
                 setTimeout(() => setEmergencyError(""), 5000);
                 return emergency;
               }
               setEmergencyError("");
               return updatedEmergency;
             }
-            
+
             return {
               ...emergency,
               [field]: value,
             };
           }),
         };
-      })
+      }),
     );
   };
 
@@ -243,11 +253,11 @@ const ScenarioForm = ({ mode = "create" }) => {
           ? {
               ...stop,
               emergencies: stop.emergencies.filter(
-                (_, ei) => ei !== emergencyIndex
+                (_, ei) => ei !== emergencyIndex,
               ),
             }
-          : stop
-      )
+          : stop,
+      ),
     );
   };
 
@@ -278,7 +288,7 @@ const ScenarioForm = ({ mode = "create" }) => {
       showMessage(
         "Authentication Required",
         "Authentication token not found. Please login again.",
-        "error"
+        "error",
       );
       setTimeout(() => navigate("/"), 2000);
       return;
@@ -303,7 +313,7 @@ const ScenarioForm = ({ mode = "create" }) => {
         showMessage(
           "Session Expired",
           "Your session has expired. Please login again.",
-          "error"
+          "error",
         );
         setTimeout(() => navigate("/"), 2000);
         return;
@@ -321,7 +331,7 @@ const ScenarioForm = ({ mode = "create" }) => {
           showMessage(
             "Success!",
             "Scenario created successfully!\n\nVideo is being generated and will be available shortly.",
-            "success"
+            "success",
           );
         }
         setTimeout(() => navigate("/dashboard"), 2000);
@@ -331,20 +341,20 @@ const ScenarioForm = ({ mode = "create" }) => {
         showMessage(
           `${isEditMode ? "Update" : "Creation"} Failed`,
           data.message || `Failed to ${action} scenario. Please try again.`,
-          "error"
+          "error",
         );
       }
     } catch (error) {
       console.error(
         `Error ${isEditMode ? "updating" : "creating"} scenario:`,
-        error
+        error,
       );
       const action = isEditMode ? "update" : "create";
       setError(`Failed to ${action} scenario. Please try again.`);
       showMessage(
         "Error",
         `Failed to ${action} scenario. Please try again.`,
-        "error"
+        "error",
       );
     } finally {
       setSaving(false);
@@ -365,7 +375,7 @@ const ScenarioForm = ({ mode = "create" }) => {
     onBlur,
     placeholder,
     isRequired = true,
-    minValue = 0
+    minValue = 0,
   ) => (
     <input
       type="number"
@@ -375,19 +385,29 @@ const ScenarioForm = ({ mode = "create" }) => {
       placeholder={placeholder}
       value={value}
       onKeyDown={(e) => {
-        if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
+        if (
+          e.key === "." ||
+          e.key === "," ||
+          e.key === "e" ||
+          e.key === "E" ||
+          e.key === "-" ||
+          e.key === "+"
+        ) {
           e.preventDefault();
         }
       }}
       onPaste={(e) => {
-        const pastedData = e.clipboardData.getData('text');
+        const pastedData = e.clipboardData.getData("text");
         if (!/^\d+$/.test(pastedData)) {
           e.preventDefault();
         }
       }}
       onChange={(e) => {
-        const val = e.target.value.replace(/^0+/, '') || '';
-        if (val === "" || (/^\d+$/.test(val) && Number(val) >= 0 && Number(val) <= 999)) {
+        const val = e.target.value.replace(/^0+/, "") || "";
+        if (
+          val === "" ||
+          (/^\d+$/.test(val) && Number(val) >= 0 && Number(val) <= 999)
+        ) {
           onChange(val === "" ? "" : parseInt(val) || "");
         }
       }}
@@ -410,7 +430,7 @@ const ScenarioForm = ({ mode = "create" }) => {
     onChange,
     placeholder,
     title,
-    minValue = 0
+    minValue = 0,
   ) => (
     <div
       style={{
@@ -428,34 +448,63 @@ const ScenarioForm = ({ mode = "create" }) => {
         maxLength={type === "text" ? 50 : undefined}
         placeholder={placeholder}
         value={value}
-        onKeyDown={type === "number" ? (e) => {
-          if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
-            e.preventDefault();
-          }
-        } : undefined}
-        onPaste={type === "number" ? (e) => {
-          const pastedData = e.clipboardData.getData('text');
-          if (!/^\d+$/.test(pastedData)) {
-            e.preventDefault();
-          }
-        } : undefined}
-        onChange={type === "number" ? (e) => {
-          const val = e.target.value.replace(/^0+/, '') || '';
-          if (val === "" || (/^\d+$/.test(val) && Number(val) >= 0 && Number(val) <= 999)) {
-            const processedVal = val === "" ? "" : parseInt(val) || "";
-            onChange({ target: { value: processedVal.toString() } });
-          }
-        } : onChange}
-        onBlur={type === "number" ? (e) => {
-          const val = e.target.value;
-          if (val === "" || Number(val) < minValue) {
-            const newVal = minValue;
-            onChange({ target: { value: newVal.toString() } });
-          } else {
-            const clampedVal = Math.min(999, Math.max(minValue, parseInt(val) || minValue));
-            onChange({ target: { value: clampedVal.toString() } });
-          }
-        } : undefined}
+        onKeyDown={
+          type === "number"
+            ? (e) => {
+                if (
+                  e.key === "." ||
+                  e.key === "," ||
+                  e.key === "e" ||
+                  e.key === "E" ||
+                  e.key === "-" ||
+                  e.key === "+"
+                ) {
+                  e.preventDefault();
+                }
+              }
+            : undefined
+        }
+        onPaste={
+          type === "number"
+            ? (e) => {
+                const pastedData = e.clipboardData.getData("text");
+                if (!/^\d+$/.test(pastedData)) {
+                  e.preventDefault();
+                }
+              }
+            : undefined
+        }
+        onChange={
+          type === "number"
+            ? (e) => {
+                const val = e.target.value.replace(/^0+/, "") || "";
+                if (
+                  val === "" ||
+                  (/^\d+$/.test(val) && Number(val) >= 0 && Number(val) <= 999)
+                ) {
+                  const processedVal = val === "" ? "" : parseInt(val) || "";
+                  onChange({ target: { value: processedVal.toString() } });
+                }
+              }
+            : onChange
+        }
+        onBlur={
+          type === "number"
+            ? (e) => {
+                const val = e.target.value;
+                if (val === "" || Number(val) < minValue) {
+                  const newVal = minValue;
+                  onChange({ target: { value: newVal.toString() } });
+                } else {
+                  const clampedVal = Math.min(
+                    999,
+                    Math.max(minValue, parseInt(val) || minValue),
+                  );
+                  onChange({ target: { value: clampedVal.toString() } });
+                }
+              }
+            : undefined
+        }
         style={{
           width: "100%",
           padding: 8,
@@ -528,12 +577,12 @@ const ScenarioForm = ({ mode = "create" }) => {
         </div>
       </header>
 
-      <div 
+      <div
         className="scenario-form"
         style={{
           opacity: saving ? 0.5 : 1,
-          pointerEvents: saving ? 'none' : 'auto',
-          transition: 'opacity 0.3s ease',
+          pointerEvents: saving ? "none" : "auto",
+          transition: "opacity 0.3s ease",
         }}
       >
         {error && (
@@ -615,10 +664,12 @@ const ScenarioForm = ({ mode = "create" }) => {
                 Stop Name <span style={{ color: "#ef4444" }}>*</span>
               </div>
               <div style={{ flex: 1, minWidth: 120 }}>
-                Travel Time to Next Stop (sec) <span style={{ color: "#ef4444" }}>*</span>
+                Travel Time to Next Stop (sec){" "}
+                <span style={{ color: "#ef4444" }}>*</span>
               </div>
               <div style={{ flex: 1, minWidth: 150 }}>
-                Stay Time at Stop (sec) <span style={{ color: "#ef4444" }}>*</span>
+                Stay Time at Stop (sec){" "}
+                <span style={{ color: "#ef4444" }}>*</span>
               </div>
               <div style={{ width: 80 }}></div>
             </div>
@@ -664,18 +715,27 @@ const ScenarioForm = ({ mode = "create" }) => {
 
                     <div style={{ flex: 1, minWidth: 120 }}>
                       {idx === stops.length - 1 ? (
-                        <div style={{ color: "#9ca3af", fontSize: 14, fontStyle: "italic", padding: 8 }}>
+                        <div
+                          style={{
+                            color: "#9ca3af",
+                            fontSize: 14,
+                            fontStyle: "italic",
+                            padding: 8,
+                          }}
+                        >
                           N/A
                         </div>
                       ) : (
                         <div className="stop-input">
                           {renderNumberInput(
                             stop.travelTimeToNextStop,
-                            (val) => updateStop(stop.id, "travelTimeToNextStop", val),
-                            (val) => updateStop(stop.id, "travelTimeToNextStop", val),
+                            (val) =>
+                              updateStop(stop.id, "travelTimeToNextStop", val),
+                            (val) =>
+                              updateStop(stop.id, "travelTimeToNextStop", val),
                             "60",
                             true,
-                            60
+                            60,
                           )}
                         </div>
                       )}
@@ -683,7 +743,14 @@ const ScenarioForm = ({ mode = "create" }) => {
 
                     <div style={{ flex: 1, minWidth: 150 }}>
                       {idx === stops.length - 1 ? (
-                        <div style={{ color: "#9ca3af", fontSize: 14, fontStyle: "italic", padding: 8 }}>
+                        <div
+                          style={{
+                            color: "#9ca3af",
+                            fontSize: 14,
+                            fontStyle: "italic",
+                            padding: 8,
+                          }}
+                        >
                           N/A
                         </div>
                       ) : (
@@ -692,7 +759,7 @@ const ScenarioForm = ({ mode = "create" }) => {
                             stop.stayTimeAtStop,
                             (val) => updateStop(stop.id, "stayTimeAtStop", val),
                             (val) => updateStop(stop.id, "stayTimeAtStop", val),
-                            "30"
+                            "30",
                           )}
                         </div>
                       )}
@@ -717,9 +784,9 @@ const ScenarioForm = ({ mode = "create" }) => {
             ))}
           </div>
 
-          {stops.some(stop => stop.emergencies?.length > 0) && (
+          {stops.some((stop) => stop.emergencies?.length > 0) && (
             <div style={{ marginBottom: 12 }}>
-              {stops.map((stop, idx) => 
+              {stops.map((stop, idx) =>
                 (stop.emergencies || []).map((em, ei) => (
                   <div
                     key={`em-${idx}-${ei}`}
@@ -743,7 +810,9 @@ const ScenarioForm = ({ mode = "create" }) => {
                           border: "1px solid #fbbf24",
                         }}
                       >
-                        💡 <strong>Note:</strong> Emergency interrupts the video at your chosen time and adds extra seconds. The video then continues from where it paused.
+                        💡 <strong>Note:</strong> Emergency interrupts the video
+                        at your chosen time and adds extra seconds. The video
+                        then continues from where it paused.
                       </div>
                     )}
                     <div
@@ -760,7 +829,7 @@ const ScenarioForm = ({ mode = "create" }) => {
                         em.text,
                         (e) => updateEmergency(idx, ei, "text", e.target.value),
                         "e.g., Fire Ahead",
-                        undefined
+                        undefined,
                       )}
 
                       {renderEmergencyInput(
@@ -772,10 +841,10 @@ const ScenarioForm = ({ mode = "create" }) => {
                             idx,
                             ei,
                             "startSecond",
-                            e.target.value
+                            e.target.value,
                           ),
                         "120",
-                        "Time in video when emergency interrupts and displays"
+                        "Time in video when emergency interrupts and displays",
                       )}
 
                       {renderEmergencyInput(
@@ -786,7 +855,7 @@ const ScenarioForm = ({ mode = "create" }) => {
                           updateEmergency(idx, ei, "seconds", e.target.value),
                         "10",
                         "How long the emergency message displays before video resumes",
-                        10
+                        10,
                       )}
 
                       <div
@@ -824,13 +893,19 @@ const ScenarioForm = ({ mode = "create" }) => {
                       </div>
                     )}
                   </div>
-                ))
+                )),
               )}
             </div>
           )}
 
           {!hasAnyEmergency && (
-            <div style={{ margin: "12px 0", display: "flex", justifyContent: "right" }}>
+            <div
+              style={{
+                margin: "12px 0",
+                display: "flex",
+                justifyContent: "right",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => {
@@ -899,8 +974,8 @@ const ScenarioForm = ({ mode = "create" }) => {
                   ? "Updating..."
                   : "Saving..."
                 : isEditMode
-                ? "Update"
-                : "Save"}
+                  ? "Update"
+                  : "Create"}
             </button>
             <div
               style={{

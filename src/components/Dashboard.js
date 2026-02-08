@@ -36,6 +36,7 @@ const Dashboard = () => {
     isOpen: false,
     scenarioId: null,
     scenarioName: "",
+    videoLoading: true,
   });
 
   useEffect(() => {
@@ -76,7 +77,7 @@ const Dashboard = () => {
       setFilteredScenarios(scenarios);
     } else {
       const filtered = scenarios.filter((scenario) =>
-        scenario.name.toLowerCase().includes(searchQuery.toLowerCase())
+        scenario.name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
       setFilteredScenarios(filtered);
     }
@@ -105,11 +106,11 @@ const Dashboard = () => {
   };
 
   const openPreviewModal = (scenarioId, scenarioName) => {
-    setPreviewModal({ isOpen: true, scenarioId, scenarioName });
+    setPreviewModal({ isOpen: true, scenarioId, scenarioName, videoLoading: true });
   };
 
   const closePreviewModal = () => {
-    setPreviewModal({ isOpen: false, scenarioId: null, scenarioName: "" });
+    setPreviewModal({ isOpen: false, scenarioId: null, scenarioName: "", videoLoading: true });
   };
 
   const fetchScenarios = async (isSilentRefresh = false) => {
@@ -134,7 +135,7 @@ const Dashboard = () => {
       showMessage(
         "Video Not Ready",
         "Video is still being generated. Please wait a moment and try again.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -146,7 +147,7 @@ const Dashboard = () => {
       showMessage(
         "Video Not Ready",
         "Video is still being generated. Please wait a moment and try again.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -173,7 +174,7 @@ const Dashboard = () => {
       showMessage(
         "Download Failed",
         "Failed to download video. Please try again.",
-        "error"
+        "error",
       );
     } finally {
       setDownloading(null);
@@ -189,18 +190,18 @@ const Dashboard = () => {
           setDeleting(scenarioId);
 
           const updatedScenarios = scenarios.filter(
-            (s) => s._id !== scenarioId
+            (s) => s._id !== scenarioId,
           );
           setScenarios(updatedScenarios);
           setFilteredScenarios(
-            filteredScenarios.filter((s) => s._id !== scenarioId)
+            filteredScenarios.filter((s) => s._id !== scenarioId),
           );
           localStorage.setItem("scenarios", JSON.stringify(updatedScenarios));
 
           showMessage(
             "Deleting...",
             "Scenario is being deleted. This may take a moment.",
-            "info"
+            "info",
           );
 
           const { data } = await scenarioAPI.deleteScenario(scenarioId);
@@ -211,7 +212,7 @@ const Dashboard = () => {
               showMessage(
                 "Deleted!",
                 "Scenario deleted successfully!",
-                "success"
+                "success",
               );
             }, 100);
           } else {
@@ -224,7 +225,7 @@ const Dashboard = () => {
               showMessage(
                 "Error",
                 data.message || "Failed to delete scenario",
-                "error"
+                "error",
               );
             }, 100);
           }
@@ -240,14 +241,14 @@ const Dashboard = () => {
             showMessage(
               "Error",
               "Failed to delete scenario. Please try again.",
-              "error"
+              "error",
             );
           }, 100);
         } finally {
           setDeleting(null);
         }
       },
-      "danger"
+      "danger",
     );
   };
 
@@ -285,8 +286,8 @@ const Dashboard = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   };
@@ -300,33 +301,61 @@ const Dashboard = () => {
     try {
       const headers = [
         "Scenario Name",
-        "Total Stops",
+        "Stop Name",
+        "Travel Time to Next Stop (sec)",
+        "Stay Time at Stop (sec)",
         "Created By",
         "Created At",
         "Updated By",
         "Last Updated At",
-        "Stop Name",
-        "Travel Time to Next Stop (sec)",
-        "Stay Time at Stop (sec)",
+        "Emergency Description",
+        "Emergency Interrupt At (sec)",
+        "Emergency Duration (sec)",
       ];
 
-      // Build CSV rows
       const rows = [];
-      console.log('DEBUG: Building CSV rows, scenarios count:', scenarios.length);
       scenarios.forEach((scenario) => {
         scenario.stops.forEach((stop, index) => {
-          const row = [
-            `"${scenario.name}"`,
-            scenario.stops.length,
-            `"${scenario.createdByName || "Unknown"}"`,
-            scenario.createdAt ? formatDate(scenario.createdAt) : "N/A",
-            `"${scenario.updatedByName || "Unknown"}"`,
-            scenario.lastUpdatedAt ? formatDate(scenario.lastUpdatedAt) : "",
-            `"${stop.name}"`,
-            stop.travelTimeToNextStop || 0,
-            stop.stayTimeAtStop || 0,
-          ];
-          rows.push(row.join(","));
+          const hasEmergencies =
+            stop.emergencies &&
+            Array.isArray(stop.emergencies) &&
+            stop.emergencies.length > 0;
+
+          if (hasEmergencies) {
+            stop.emergencies.forEach((emergency) => {
+              const row = [
+                `"${scenario.name}"`,
+                `"${stop.name}"`,
+                stop.travelTimeToNextStop || 0,
+                stop.stayTimeAtStop || 0,
+                `"${scenario.createdByName || "Unknown"}"`,
+                scenario.createdAt ? formatDate(scenario.createdAt) : "N/A",
+                `"${scenario.updatedByName || "Unknown"}"`,
+                scenario.lastUpdatedAt
+                  ? formatDate(scenario.lastUpdatedAt)
+                  : "",
+                `"${emergency.text || ""}"`,
+                emergency.startSecond || 0,
+                emergency.seconds || 0,
+              ];
+              rows.push(row.join(","));
+            });
+          } else {
+            const row = [
+              `"${scenario.name}"`,
+              `"${stop.name}"`,
+              stop.travelTimeToNextStop || 0,
+              stop.stayTimeAtStop || 0,
+              `"${scenario.createdByName || "Unknown"}"`,
+              scenario.createdAt ? formatDate(scenario.createdAt) : "N/A",
+              `"${scenario.updatedByName || "Unknown"}"`,
+              scenario.lastUpdatedAt ? formatDate(scenario.lastUpdatedAt) : "",
+              "",
+              "",
+              "",
+            ];
+            rows.push(row.join(","));
+          }
         });
       });
 
@@ -344,14 +373,14 @@ const Dashboard = () => {
       showMessage(
         "Success!",
         `Exported ${scenarios.length} scenario(s) to CSV successfully!`,
-        "success"
+        "success",
       );
     } catch (error) {
       console.error("Error exporting to CSV:", error);
       showMessage(
         "Export Failed",
         "Failed to export scenarios to CSV. Please try again.",
-        "error"
+        "error",
       );
     }
   };
@@ -520,12 +549,20 @@ const Dashboard = () => {
           ) : (
             <div className="scenarios-grid">
               {filteredScenarios.map((scenario) => (
-                <div 
-                  key={scenario._id} 
+                <div
+                  key={scenario._id}
                   className="scenario-card"
                   style={{
-                    opacity: scenario.videoStatus === "generating" || scenario.videoStatus === "pending" ? 0.7 : 1,
-                    pointerEvents: scenario.videoStatus === "generating" || scenario.videoStatus === "pending" ? "none" : "auto",
+                    opacity:
+                      scenario.videoStatus === "generating" ||
+                      scenario.videoStatus === "pending"
+                        ? 0.7
+                        : 1,
+                    pointerEvents:
+                      scenario.videoStatus === "generating" ||
+                      scenario.videoStatus === "pending"
+                        ? "none"
+                        : "auto",
                     transition: "opacity 0.3s ease",
                   }}
                 >
@@ -605,7 +642,7 @@ const Dashboard = () => {
                         handlePreviewVideo(
                           scenario._id,
                           scenario.videoStatus,
-                          scenario.name
+                          scenario.name,
                         )
                       }
                       disabled={
@@ -671,21 +708,36 @@ const Dashboard = () => {
               </button>
             </div>
             <div className="modal-body-video">
+              {previewModal.videoLoading && (
+                <div className="video-loading-overlay">
+                  <div className="video-loading-spinner"></div>
+                  <p>Loading video...</p>
+                </div>
+              )}
               <video
                 controls
                 autoPlay
+                preload="auto"
                 style={{
                   width: "100%",
                   maxHeight: "70vh",
                   backgroundColor: "#000",
                   borderRadius: "8px",
+                  display: previewModal.videoLoading ? 'none' : 'block',
                 }}
                 key={previewModal.scenarioId}
+                onLoadedData={(e) => {
+                  setPreviewModal(prev => ({ ...prev, videoLoading: false }));
+                  e.target.play().catch(err => console.log("Auto-play prevented:", err));
+                }}
+                onCanPlay={(e) => {
+                  e.target.play().catch(err => console.log("Auto-play prevented:", err));
+                }}
               >
                 <source
                   src={`${config.API_BASE_URL}/scenario/${
                     previewModal.scenarioId
-                  }/video/preview?token=${localStorage.getItem("token")}`}
+                  }/video/preview?token=${localStorage.getItem("token")}&t=${Date.now()}`}
                   type="video/mp4"
                 />
                 Your browser does not support the video tag.
