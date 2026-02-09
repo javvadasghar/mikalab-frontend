@@ -18,20 +18,12 @@ const Login = () => {
       const { data } = await userAPI.login(email, password);
 
       if (data.success && data.token) {
-        // Store both token and user data
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-
-        console.log(
-          "Login successful, token stored:",
-          data.token.substring(0, 20) + "..."
-        );
-
-        // Navigate to dashboard
         navigate("/dashboard");
       } else {
         setError(
-          data.message || "Login failed. Please check your credentials."
+          data.message || "Login failed. Please check your credentials.",
         );
       }
     } catch (err) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userAPI } from "../services/api";
 import "../styles/CreateScenario.css";
@@ -234,7 +234,7 @@ const NewUser = () => {
             "Access Denied",
             "Admin access only. You will be redirected to the dashboard.",
             "warning",
-            () => navigate("/dashboard")
+            () => navigate("/dashboard"),
           );
         }
       } catch (error) {
@@ -311,7 +311,7 @@ const NewUser = () => {
           "Success!",
           `User "${firstName} ${lastName}" has been created successfully.`,
           "success",
-          () => navigate("/manage-users")
+          () => navigate("/manage-users"),
         );
       } else {
         setError(data.message || "Failed to create user");

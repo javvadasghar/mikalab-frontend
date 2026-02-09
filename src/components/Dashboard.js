@@ -106,11 +106,21 @@ const Dashboard = () => {
   };
 
   const openPreviewModal = (scenarioId, scenarioName) => {
-    setPreviewModal({ isOpen: true, scenarioId, scenarioName, videoLoading: true });
+    setPreviewModal({
+      isOpen: true,
+      scenarioId,
+      scenarioName,
+      videoLoading: true,
+    });
   };
 
   const closePreviewModal = () => {
-    setPreviewModal({ isOpen: false, scenarioId: null, scenarioName: "", videoLoading: true });
+    setPreviewModal({
+      isOpen: false,
+      scenarioId: null,
+      scenarioName: "",
+      videoLoading: true,
+    });
   };
 
   const fetchScenarios = async (isSilentRefresh = false) => {
@@ -723,15 +733,19 @@ const Dashboard = () => {
                   maxHeight: "70vh",
                   backgroundColor: "#000",
                   borderRadius: "8px",
-                  display: previewModal.videoLoading ? 'none' : 'block',
+                  display: previewModal.videoLoading ? "none" : "block",
                 }}
                 key={previewModal.scenarioId}
                 onLoadedData={(e) => {
-                  setPreviewModal(prev => ({ ...prev, videoLoading: false }));
-                  e.target.play().catch(err => console.log("Auto-play prevented:", err));
+                  setPreviewModal((prev) => ({ ...prev, videoLoading: false }));
+                  e.target
+                    .play()
+                    .catch((err) => console.log("Auto-play prevented:", err));
                 }}
                 onCanPlay={(e) => {
-                  e.target.play().catch(err => console.log("Auto-play prevented:", err));
+                  e.target
+                    .play()
+                    .catch((err) => console.log("Auto-play prevented:", err));
                 }}
               >
                 <source

@@ -12,7 +12,7 @@ const getAuthHeaders = () => {
 // Helper function to handle API responses
 const handleResponse = async (response) => {
   const data = await response.json();
-  
+
   // Handle 401 Unauthorized
   if (response.status === 401) {
     localStorage.removeItem("token");
@@ -20,11 +20,9 @@ const handleResponse = async (response) => {
     window.location.href = "/";
     throw new Error("Session expired. Please login again.");
   }
-  
+
   return { response, data };
 };
-
-// ==================== USER APIs ====================
 
 export const userAPI = {
   // Login user
@@ -74,13 +72,11 @@ export const userAPI = {
       {
         method: "PUT",
         headers: getAuthHeaders(),
-      }
+      },
     );
     return handleResponse(response);
   },
 };
-
-// ==================== SCENARIO APIs ====================
 
 export const scenarioAPI = {
   // Get all scenarios
@@ -99,7 +95,7 @@ export const scenarioAPI = {
       `${config.API_BASE_URL}/scenario/${scenarioId}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
     return handleResponse(response);
   },
@@ -122,7 +118,7 @@ export const scenarioAPI = {
         method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify(scenarioData),
-      }
+      },
     );
     return handleResponse(response);
   },
@@ -134,7 +130,7 @@ export const scenarioAPI = {
       {
         method: "DELETE",
         headers: getAuthHeaders(),
-      }
+      },
     );
     return handleResponse(response);
   },
@@ -148,7 +144,7 @@ export const scenarioAPI = {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -158,8 +154,6 @@ export const scenarioAPI = {
     return response.blob();
   },
 };
-
-// ==================== HELPER FUNCTIONS ====================
 
 // Check if user is authenticated
 export const isAuthenticated = () => {

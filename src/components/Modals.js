@@ -1,6 +1,3 @@
-import React from "react";
-
-// Confirmation Modal Component
 export const ConfirmModal = ({
   isOpen,
   onClose,
