@@ -504,7 +504,7 @@ const Dashboard = () => {
 
       <div className="dashboard-container">
         <div className="scenarios-section">
-          <h2>Previous Scenarios</h2>
+          <h2>Scenarios</h2>
           {loading && scenarios.length === 0 ? (
             <div
               style={{
@@ -576,7 +576,22 @@ const Dashboard = () => {
                     transition: "opacity 0.3s ease",
                   }}
                 >
-                  <div className="scenario-header">
+                  {(scenario.videoStatus === "generating" ||
+                    scenario.videoStatus === "pending") && (
+                    <div className="video-generating-banner">
+                      <div className="marquee">
+                        <span className="marquee-content">
+                          🎬 Video is being generated... Please wait... Video processing in progress... 🎬 Video is being generated... Please wait... Video processing in progress... 🎬
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <div 
+                    className="scenario-header"
+                    style={{
+                      marginTop: (scenario.videoStatus === "generating" || scenario.videoStatus === "pending") ? "35px" : "0"
+                    }}
+                  >
                     <h3>{scenario.name}</h3>
                     <div
                       style={{

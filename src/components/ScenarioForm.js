@@ -8,7 +8,7 @@ import "../styles/Dashboard.css";
 const defaultStop = (id) => ({
   id: id || Date.now(),
   name: "",
-  travelTimeToNextStop: 60,
+  travelTimeToNextStop: 30,
   stayTimeAtStop: 0,
   emergencies: [],
 });
@@ -128,7 +128,7 @@ const ScenarioForm = ({ mode = "create" }) => {
         const mapped = (data.scenario.stops || []).map((stop, i) => ({
           id: i,
           name: stop.name || `Stop ${i + 1}`,
-          travelTimeToNextStop: Math.max(60, stop.travelTimeToNextStop ?? 60),
+          travelTimeToNextStop: Math.max(20, stop.travelTimeToNextStop ?? 30),
           stayTimeAtStop: stop.stayTimeAtStop ?? 0,
           emergencies: Array.isArray(stop.emergencies)
             ? stop.emergencies.map((e) => ({
@@ -733,9 +733,9 @@ const ScenarioForm = ({ mode = "create" }) => {
                               updateStop(stop.id, "travelTimeToNextStop", val),
                             (val) =>
                               updateStop(stop.id, "travelTimeToNextStop", val),
-                            "60",
+                            "30",
                             true,
-                            60,
+                            30,
                           )}
                         </div>
                       )}
