@@ -9,12 +9,10 @@ const getAuthHeaders = () => {
   };
 };
 
-// Helper function to handle API responses
-const handleResponse = async (response) => {
+const handleResponse = async (response, skipAuthRedirect = false) => {
   const data = await response.json();
 
-  // Handle 401 Unauthorized
-  if (response.status === 401) {
+  if (response.status === 401 && !skipAuthRedirect) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     window.location.href = "/";
@@ -25,7 +23,6 @@ const handleResponse = async (response) => {
 };
 
 export const userAPI = {
-  // Login user
   login: async (email, password) => {
     const response = await fetch(`${config.API_BASE_URL}/user/login`, {
       method: "POST",
@@ -35,7 +32,7 @@ export const userAPI = {
       credentials: "include",
       body: JSON.stringify({ email, password }),
     });
-    return handleResponse(response);
+    return handleResponse(response, true);
   },
 
   // Get all users (Admin only)
@@ -97,7 +94,8 @@ export const scenarioAPI = {
         headers: getAuthHeaders(),
       },
     );
-    return handleResponse(response);
+    const result = await handleResponse(response);
+    return result;
   },
 
   // Create new scenario

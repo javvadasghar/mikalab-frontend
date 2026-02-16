@@ -309,64 +309,96 @@ const Dashboard = () => {
     }
 
     try {
+      const formatTime = (totalSeconds) => {
+        if (!totalSeconds || totalSeconds === 0) return "0 sec";
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        if (minutes === 0) return `${seconds} sec`;
+        if (seconds === 0) return `${minutes} min`;
+        return `${minutes} min ${seconds} sec`;
+      };
+
       const headers = [
         "Scenario Name",
         "Stop Name",
-        "Travel Time to Next Stop (sec)",
-        "Stay Time at Stop (sec)",
+        "Time to Reach Next Stop",
+        "Stay Time at Stop",
         "Created By",
         "Created At",
         "Updated By",
         "Last Updated At",
+        "Emergency Type",
         "Emergency Description",
-        "Emergency Interrupt At (sec)",
-        "Emergency Duration (sec)",
+        "Emergency Interrupt At",
+        "Emergency Duration",
       ];
 
       const rows = [];
       scenarios.forEach((scenario) => {
-        scenario.stops.forEach((stop, index) => {
-          const hasEmergencies =
-            stop.emergencies &&
-            Array.isArray(stop.emergencies) &&
-            stop.emergencies.length > 0;
+        const hasEmergencies =
+          scenario.emergencies &&
+          Array.isArray(scenario.emergencies) &&
+          scenario.emergencies.length > 0;
 
-          if (hasEmergencies) {
-            stop.emergencies.forEach((emergency) => {
+        const getCreatedByName = () => {
+          if (scenario.createdBy && typeof scenario.createdBy === "object") {
+            return (
+              `${scenario.createdBy.firstName || ""} ${scenario.createdBy.lastName || ""}`.trim() ||
+              "Unknown"
+            );
+          }
+          return "Unknown";
+        };
+
+        const getUpdatedByName = () => {
+          if (scenario.updatedBy && typeof scenario.updatedBy === "object") {
+            return (
+              `${scenario.updatedBy.firstName || ""} ${scenario.updatedBy.lastName || ""}`.trim() ||
+              "Unknown"
+            );
+          }
+          return "N/A";
+        };
+
+        if (hasEmergencies) {
+          scenario.stops.forEach((stop, index) => {
+            scenario.emergencies.forEach((emergency) => {
               const row = [
                 `"${scenario.name}"`,
                 `"${stop.name}"`,
-                stop.travelTimeToNextStop || 0,
-                stop.stayTimeAtStop || 0,
-                `"${scenario.createdByName || "Unknown"}"`,
+                `"${formatTime(stop.travelTimeToNextStop || 0)}"`,
+                `"${formatTime(stop.stayTimeAtStop || 0)}"`,
+                `"${getCreatedByName()}"`,
                 scenario.createdAt ? formatDate(scenario.createdAt) : "N/A",
-                `"${scenario.updatedByName || "Unknown"}"`,
-                scenario.lastUpdatedAt
-                  ? formatDate(scenario.lastUpdatedAt)
-                  : "",
+                `"${getUpdatedByName()}"`,
+                scenario.updatedAt ? formatDate(scenario.updatedAt) : "N/A",
+                `"${emergency.type || "danger"}"`,
                 `"${emergency.text || ""}"`,
-                emergency.startSecond || 0,
-                emergency.seconds || 0,
+                `"${formatTime(emergency.startSecond || 0)}"`,
+                `"${formatTime(emergency.seconds || 0)}"`,
               ];
               rows.push(row.join(","));
             });
-          } else {
+          });
+        } else {
+          scenario.stops.forEach((stop, index) => {
             const row = [
               `"${scenario.name}"`,
               `"${stop.name}"`,
-              stop.travelTimeToNextStop || 0,
-              stop.stayTimeAtStop || 0,
-              `"${scenario.createdByName || "Unknown"}"`,
+              `"${formatTime(stop.travelTimeToNextStop || 0)}"`,
+              `"${formatTime(stop.stayTimeAtStop || 0)}"`,
+              `"${getCreatedByName()}"`,
               scenario.createdAt ? formatDate(scenario.createdAt) : "N/A",
-              `"${scenario.updatedByName || "Unknown"}"`,
-              scenario.lastUpdatedAt ? formatDate(scenario.lastUpdatedAt) : "",
+              `"${getUpdatedByName()}"`,
+              scenario.updatedAt ? formatDate(scenario.updatedAt) : "N/A",
+              "",
               "",
               "",
               "",
             ];
             rows.push(row.join(","));
-          }
-        });
+          });
+        }
       });
 
       const csvContent = [headers.join(","), ...rows].join("\n");
@@ -533,10 +565,33 @@ const Dashboard = () => {
             </div>
           ) : filteredScenarios.length === 0 ? (
             <div
+              onClick={() => {
+                if (!searchQuery) {
+                  navigate("/create-scenario");
+                }
+              }}
               style={{
                 textAlign: "center",
                 padding: "60px 20px",
                 color: "#6b7280",
+                cursor: searchQuery ? "default" : "pointer",
+                borderRadius: "12px",
+                transition: "all 0.3s ease",
+                backgroundColor: searchQuery ? "transparent" : "#f9fafb",
+              }}
+              onMouseEnter={(e) => {
+                if (!searchQuery) {
+                  e.currentTarget.style.backgroundColor = "#f3f4f6";
+                  e.currentTarget.style.color = "#374151";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!searchQuery) {
+                  e.currentTarget.style.backgroundColor = "#f9fafb";
+                  e.currentTarget.style.color = "#6b7280";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }
               }}
             >
               <svg
@@ -581,15 +636,22 @@ const Dashboard = () => {
                     <div className="video-generating-banner">
                       <div className="marquee">
                         <span className="marquee-content">
-                          🎬 Video is being generated... Please wait... Video processing in progress... 🎬 Video is being generated... Please wait... Video processing in progress... 🎬
+                          Video is being generated... Please wait 2 minutes...
+                          Video processing in progress... Video is being
+                          generated... Please wait 2 minutes... Video processing
+                          in progress...
                         </span>
                       </div>
                     </div>
                   )}
-                  <div 
+                  <div
                     className="scenario-header"
                     style={{
-                      marginTop: (scenario.videoStatus === "generating" || scenario.videoStatus === "pending") ? "35px" : "0"
+                      marginTop:
+                        scenario.videoStatus === "generating" ||
+                        scenario.videoStatus === "pending"
+                          ? "35px"
+                          : "0",
                     }}
                   >
                     <h3>{scenario.name}</h3>
@@ -618,11 +680,12 @@ const Dashboard = () => {
                           <div className="tooltip-section">
                             <div className="tooltip-label">Created By</div>
                             <div className="tooltip-value">
-                              {scenario.createdByName || "Unknown"} on{" "}
+                              {scenario.createdBy?.firstName || "Unknown"}{" "}
+                              {scenario.createdBy?.lastName || ""} on{" "}
                               {formatDate(scenario.createdAt)}
                             </div>
                           </div>
-                          {scenario.lastUpdatedAt && (
+                          {scenario.updatedAt && scenario.updatedBy && (
                             <>
                               <div className="tooltip-divider"></div>
                               <div className="tooltip-section">
@@ -630,8 +693,9 @@ const Dashboard = () => {
                                   Last Updated By
                                 </div>
                                 <div className="tooltip-value">
-                                  {scenario.updatedByName || "Unknown"} on{" "}
-                                  {formatDate(scenario.lastUpdatedAt)}
+                                  {scenario.updatedBy?.firstName || "Unknown"}{" "}
+                                  {scenario.updatedBy?.lastName || ""} on{" "}
+                                  {formatDate(scenario.updatedAt)}
                                 </div>
                               </div>
                             </>
@@ -642,10 +706,10 @@ const Dashboard = () => {
                   </div>
                   <div className="scenario-details">
                     <p>
-                      <strong>Stops:</strong> {scenario.stops.length}
+                      <strong>Stops:</strong> {scenario?.stops?.length}
                     </p>
                     <div className="stops-list">
-                      {scenario.stops.map((stop, index) => (
+                      {scenario?.stops?.map((stop, index) => (
                         <div key={index} className="stop-item">
                           <span className="stop-number">{index + 1}</span>
                           <span className="stop-name">{stop.name}</span>

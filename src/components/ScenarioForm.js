@@ -1,17 +1,46 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MessageModal } from "./Modals";
 import { scenarioAPI } from "../services/api";
 import "../styles/CreateScenario.css";
 import "../styles/Dashboard.css";
+import darkThemeImg from "../images/dark.png";
+import lightThemeImg from "../images/light.png";
 
 const defaultStop = (id) => ({
   id: id || Date.now(),
   name: "",
   travelTimeToNextStop: 30,
   stayTimeAtStop: 0,
-  emergencies: [],
 });
+
+const emergencyTypes = [
+  {
+    value: "danger",
+    label: "⚠️ Danger/Hazard",
+    description: "Critical alert with siren (fire, accident, etc.)",
+  },
+  {
+    value: "traffic",
+    label: "🚗 Traffic/Road Blockage",
+    description: "Road conditions, traffic jam, blockage",
+  },
+  {
+    value: "information",
+    label: "ℹ️ Information",
+    description: "General announcement, no urgent sound",
+  },
+  {
+    value: "weather",
+    label: "🌧️ Weather Alert",
+    description: "Weather conditions, caution needed",
+  },
+  {
+    value: "announcement",
+    label: "📢 Service Announcement",
+    description: "Route changes, delays, updates",
+  },
+];
 
 const formatTime = (totalSeconds) => {
   const hrs = Math.floor(totalSeconds / 3600);
@@ -22,15 +51,37 @@ const formatTime = (totalSeconds) => {
   return `${secs}s`;
 };
 
-const calculateTotalSeconds = (stops) => {
+const secondsToMinSec = (totalSeconds) => {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return { minutes: mins, seconds: secs };
+};
+
+const minSecToSeconds = (minutes, seconds) => {
+  return (Number(minutes) || 0) * 60 + (Number(seconds) || 0);
+};
+
+const calculateTotalSeconds = (stops, emergencies) => {
+  const stopsTotal = stops.reduce((total, stop, index) => {
+    const isLastStop = index === stops.length - 1;
+    const travel = isLastStop ? 0 : Number(stop.travelTimeToNextStop) || 0;
+    const stay = isLastStop ? 0 : Number(stop.stayTimeAtStop) || 0;
+    return total + travel + stay;
+  }, 0);
+
+  const emergenciesTotal = Array.isArray(emergencies)
+    ? emergencies.reduce((sum, e) => sum + (Number(e.seconds) || 0), 0)
+    : 0;
+
+  return stopsTotal + emergenciesTotal;
+};
+
+const calculateBaseDuration = (stops) => {
   return stops.reduce((total, stop, index) => {
     const isLastStop = index === stops.length - 1;
     const travel = isLastStop ? 0 : Number(stop.travelTimeToNextStop) || 0;
     const stay = isLastStop ? 0 : Number(stop.stayTimeAtStop) || 0;
-    const emergencies = Array.isArray(stop.emergencies)
-      ? stop.emergencies.reduce((sum, e) => sum + (Number(e.seconds) || 0), 0)
-      : 0;
-    return total + travel + stay + emergencies;
+    return total + travel + stay;
   }, 0);
 };
 
@@ -38,13 +89,6 @@ const transformStopForAPI = (stop) => ({
   name: stop.name,
   travelTimeToNextStop: Number(stop.travelTimeToNextStop) || 0,
   stayTimeAtStop: Number(stop.stayTimeAtStop) || 0,
-  emergencyEnabled: !!(stop.emergencies && stop.emergencies.length > 0),
-  emergencySeconds: Number(stop.emergencies?.[0]?.seconds) || 0,
-  emergencies: (stop.emergencies || []).map((e) => ({
-    text: e.text || "",
-    startSecond: Number(e.startSecond) || 0,
-    seconds: Number(e.seconds) || 0,
-  })),
 });
 
 const updateCachedScenarios = (scenario, isEdit = false, scenarioId = null) => {
@@ -94,16 +138,19 @@ const ScenarioForm = ({ mode = "create" }) => {
 
   const [scenarioName, setScenarioName] = useState("");
   const [theme, setTheme] = useState("dark");
+  const [showThemePreview, setShowThemePreview] = useState(false);
   const [stops, setStops] = useState(
     isEditMode
       ? [defaultStop(1)]
       : [defaultStop(1), defaultStop(2), defaultStop(3)],
   );
+  const [emergencies, setEmergencies] = useState([]);
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [emergencyError, setEmergencyError] = useState("");
   const [totalSeconds, setTotalSeconds] = useState(0);
+  const [baseDuration, setBaseDuration] = useState(0);
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -113,8 +160,9 @@ const ScenarioForm = ({ mode = "create" }) => {
   }, [id, isEditMode]);
 
   useEffect(() => {
-    setTotalSeconds(calculateTotalSeconds(stops));
-  }, [stops]);
+    setTotalSeconds(calculateTotalSeconds(stops, emergencies));
+    setBaseDuration(calculateBaseDuration(stops));
+  }, [stops, emergencies]);
 
   const fetchScenario = async () => {
     try {
@@ -130,16 +178,19 @@ const ScenarioForm = ({ mode = "create" }) => {
           name: stop.name || `Stop ${i + 1}`,
           travelTimeToNextStop: Math.max(20, stop.travelTimeToNextStop ?? 30),
           stayTimeAtStop: stop.stayTimeAtStop ?? 0,
-          emergencies: Array.isArray(stop.emergencies)
-            ? stop.emergencies.map((e) => ({
-                text: e.text || "",
-                startSecond: e.startSecond ?? 0,
-                seconds: e.seconds ?? 0,
-              }))
-            : [],
         }));
 
         setStops(mapped.length ? mapped : [defaultStop(1)]);
+
+        const scenarioEmergencies = Array.isArray(data.scenario.emergencies)
+          ? data.scenario.emergencies.map((e) => ({
+              text: e.text || "",
+              startSecond: e.startSecond ?? 0,
+              seconds: e.seconds ?? 0,
+              type: e.type || "danger",
+            }))
+          : [];
+        setEmergencies(scenarioEmergencies);
       } else {
         setError(data.message || "Failed to load scenario");
       }
@@ -167,98 +218,61 @@ const ScenarioForm = ({ mode = "create" }) => {
     }
   };
 
-  const hasAnyEmergency = stops.some((s) => s.emergencies?.length > 0);
-
-  const addEmergency = (index) => {
-    if (hasAnyEmergency) return;
-
-    setStops((prev) =>
-      prev.map((s, i) =>
-        i === index
-          ? {
-              ...s,
-              emergencies: [
-                ...s.emergencies,
-                { text: "", startSecond: 0, seconds: 10 },
-              ],
-            }
-          : s,
-      ),
-    );
+  const addEmergency = () => {
+    if (emergencies.length > 0) return;
+    setEmergencies([{ text: "", startSecond: 0, seconds: 10, type: "danger" }]);
   };
 
-  const updateEmergency = (stopIndex, emergencyIndex, field, value) => {
-    setStops((prev) =>
-      prev.map((stop, i) => {
-        if (i !== stopIndex) return stop;
+  const updateEmergency = (emergencyIndex, field, value) => {
+    setEmergencies((prev) => {
+      const baseDurationValue = calculateBaseDuration(stops);
+
+      const updated = prev.map((emergency, ei) => {
+        if (ei !== emergencyIndex) return emergency;
+        if (field === "text" || field === "type") {
+          return {
+            ...emergency,
+            [field]: value || "",
+          };
+        }
+        if (value === "") {
+          return {
+            ...emergency,
+            [field]: "",
+          };
+        }
+
+        const numValue = Math.max(0, Number(value || 0));
+        if (field === "seconds" || field === "startSecond") {
+          const updatedEmergency = {
+            ...emergency,
+            [field]: numValue,
+          };
+          const interruptAt =
+            field === "startSecond" ? numValue : updatedEmergency.startSecond;
+
+          if (interruptAt >= baseDurationValue) {
+            setEmergencyError(
+              `Interrupt time must be less than total duration (${formatTime(baseDurationValue)}). Emergency cannot interrupt at or after the end.`,
+            );
+            setTimeout(() => setEmergencyError(""), 5000);
+            return emergency;
+          }
+          setEmergencyError("");
+          return updatedEmergency;
+        }
 
         return {
-          ...stop,
-          emergencies: stop.emergencies.map((emergency, ei) => {
-            if (ei !== emergencyIndex) return emergency;
-            if (value === "") {
-              return {
-                ...emergency,
-                [field]: "",
-              };
-            }
-            const numValue = Math.max(0, Number(value || 0));
-            if (field === "seconds" || field === "startSecond") {
-              const updatedEmergency = {
-                ...emergency,
-                [field]: numValue,
-              };
-              const interruptAt =
-                field === "startSecond"
-                  ? numValue
-                  : updatedEmergency.startSecond;
-              const duration =
-                field === "seconds"
-                  ? Math.max(10, numValue)
-                  : updatedEmergency.seconds;
-
-              if (interruptAt + duration > totalSeconds) {
-                setEmergencyError(
-                  `Emergency cannot exceed scenario duration. Total: ${totalSeconds}s, Current: ${interruptAt + duration}s`,
-                );
-                setTimeout(() => setEmergencyError(""), 5000);
-                return emergency;
-              }
-
-              if (interruptAt >= totalSeconds) {
-                setEmergencyError(
-                  `Interrupt time must be less than total duration (${totalSeconds}s)`,
-                );
-                setTimeout(() => setEmergencyError(""), 5000);
-                return emergency;
-              }
-              setEmergencyError("");
-              return updatedEmergency;
-            }
-
-            return {
-              ...emergency,
-              [field]: value,
-            };
-          }),
+          ...emergency,
+          [field]: value,
         };
-      }),
-    );
+      });
+      return updated;
+    });
   };
 
-  const removeEmergency = (stopIndex, emergencyIndex) => {
-    setStops((prev) =>
-      prev.map((stop, i) =>
-        i === stopIndex
-          ? {
-              ...stop,
-              emergencies: stop.emergencies.filter(
-                (_, ei) => ei !== emergencyIndex,
-              ),
-            }
-          : stop,
-      ),
-    );
+  const removeEmergency = (emergencyIndex) => {
+    setEmergencies((prev) => prev.filter((_, ei) => ei !== emergencyIndex));
   };
 
   const validateForm = () => {
@@ -270,6 +284,16 @@ const ScenarioForm = ({ mode = "create" }) => {
     if (stops.some((stop) => !stop.name.trim())) {
       setError("Please enter names for all stops");
       return false;
+    }
+
+    if (emergencies.length > 0) {
+      const hasEmptyText = emergencies.some(
+        (em) => !em.text || !em.text.trim(),
+      );
+      if (hasEmptyText) {
+        setError("Please enter a description for the emergency or remove it");
+        return false;
+      }
     }
 
     return true;
@@ -301,6 +325,14 @@ const ScenarioForm = ({ mode = "create" }) => {
         name: scenarioName,
         theme,
         stops: stops.map(transformStopForAPI),
+        emergencies: emergencies
+          .filter((e) => e.text && e.text.trim())
+          .map((e) => ({
+            text: e.text.trim(),
+            startSecond: Number(e.startSecond) || 0,
+            seconds: Number(e.seconds) || 0,
+            type: e.type || "danger",
+          })),
       };
 
       const { response, data } = isEditMode
@@ -368,60 +400,167 @@ const ScenarioForm = ({ mode = "create" }) => {
     navigate("/");
   };
 
-  // ============ RENDER HELPERS ============
-  const renderNumberInput = (
-    value,
-    onChange,
-    onBlur,
-    placeholder,
-    isRequired = true,
-    minValue = 0,
-  ) => (
-    <input
-      type="number"
-      min={minValue}
-      max="999"
-      step="1"
-      placeholder={placeholder}
-      value={value}
-      onKeyDown={(e) => {
-        if (
-          e.key === "." ||
-          e.key === "," ||
-          e.key === "e" ||
-          e.key === "E" ||
-          e.key === "-" ||
-          e.key === "+"
-        ) {
-          e.preventDefault();
-        }
-      }}
-      onPaste={(e) => {
-        const pastedData = e.clipboardData.getData("text");
-        if (!/^\d+$/.test(pastedData)) {
-          e.preventDefault();
-        }
-      }}
-      onChange={(e) => {
-        const val = e.target.value.replace(/^0+/, "") || "";
-        if (
-          val === "" ||
-          (/^\d+$/.test(val) && Number(val) >= 0 && Number(val) <= 999)
-        ) {
-          onChange(val === "" ? "" : parseInt(val) || "");
-        }
-      }}
-      onBlur={(e) => {
-        const val = e.target.value;
-        if (val === "" || Number(val) < minValue) {
-          onBlur(minValue);
-        } else {
-          onBlur(Math.min(999, Math.max(minValue, parseInt(val) || minValue)));
-        }
-      }}
-      required={isRequired}
-    />
-  );
+  const TimeInput = ({ totalSeconds, onChange, onBlur, minValue = 0 }) => {
+    const minutesRef = useRef(null);
+    const secondsRef = useRef(null);
+    const preventBlurRef = useRef(false);
+    const isTypingRef = useRef(false);
+    const [localMinutes, setLocalMinutes] = useState(
+      () => secondsToMinSec(totalSeconds || 0).minutes,
+    );
+    const [localSeconds, setLocalSeconds] = useState(
+      () => secondsToMinSec(totalSeconds || 0).seconds,
+    );
+
+    useEffect(() => {
+      if (!isTypingRef.current) {
+        const { minutes, seconds } = secondsToMinSec(totalSeconds || 0);
+        setLocalMinutes(minutes);
+        setLocalSeconds(seconds);
+      }
+    }, [totalSeconds]);
+
+    const handleMinutesChange = (newMinutes) => {
+      isTypingRef.current = true;
+      setLocalMinutes(newMinutes);
+    };
+
+    const handleSecondsChange = (newSeconds) => {
+      isTypingRef.current = true;
+      setLocalSeconds(newSeconds);
+    };
+
+    const handleBlur = (inputRef) => (e) => {
+      if (preventBlurRef.current) {
+        e.preventDefault();
+        inputRef.current?.focus();
+        return;
+      }
+
+      isTypingRef.current = false;
+      const total = minSecToSeconds(localMinutes, localSeconds);
+      if (total < minValue) {
+        const corrected = secondsToMinSec(minValue);
+        setLocalMinutes(corrected.minutes);
+        setLocalSeconds(corrected.seconds);
+        onChange(minValue);
+        onBlur(minValue);
+      } else {
+        onChange(total);
+        onBlur(total);
+      }
+    };
+
+    const handleMouseDown = (inputRef) => () => {
+      preventBlurRef.current = true;
+      setTimeout(() => {
+        preventBlurRef.current = false;
+        inputRef.current?.focus();
+      }, 50);
+    };
+
+    return (
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <input
+            ref={minutesRef}
+            type="number"
+            min="0"
+            max="59"
+            step="1"
+            placeholder="0"
+            value={localMinutes === 0 ? "" : localMinutes}
+            onKeyDown={(e) => {
+              if (
+                e.key === "." ||
+                e.key === "," ||
+                e.key === "e" ||
+                e.key === "E" ||
+                e.key === "-" ||
+                e.key === "+"
+              ) {
+                e.preventDefault();
+              }
+            }}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "") {
+                handleMinutesChange(0);
+              } else {
+                const numVal = parseInt(val);
+                if (!isNaN(numVal) && numVal >= 0 && numVal <= 59) {
+                  handleMinutesChange(numVal);
+                }
+              }
+            }}
+            onBlur={handleBlur(minutesRef)}
+            onMouseDown={handleMouseDown(minutesRef)}
+            style={{ width: "60px", textAlign: "center", padding: "6px" }}
+          />
+          <span
+            style={{ fontSize: "11px", color: "#6b7280", marginTop: "2px" }}
+          >
+            min
+          </span>
+        </div>
+        <span style={{ fontSize: "18px", color: "#6b7280" }}>:</span>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <input
+            ref={secondsRef}
+            type="number"
+            min="0"
+            max="59"
+            step="1"
+            placeholder="0"
+            value={localSeconds === 0 ? "" : localSeconds}
+            onKeyDown={(e) => {
+              if (
+                e.key === "." ||
+                e.key === "," ||
+                e.key === "e" ||
+                e.key === "E" ||
+                e.key === "-" ||
+                e.key === "+"
+              ) {
+                e.preventDefault();
+              }
+            }}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "") {
+                handleSecondsChange(0);
+              } else {
+                const numVal = parseInt(val);
+                if (!isNaN(numVal) && numVal >= 0 && numVal <= 59) {
+                  handleSecondsChange(numVal);
+                }
+              }
+            }}
+            onBlur={handleBlur(secondsRef)}
+            onMouseDown={handleMouseDown(secondsRef)}
+            style={{ width: "60px", textAlign: "center", padding: "6px" }}
+          />
+          <span
+            style={{ fontSize: "11px", color: "#6b7280", marginTop: "2px" }}
+          >
+            sec
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   const renderEmergencyInput = (
     label,
@@ -434,85 +573,129 @@ const ScenarioForm = ({ mode = "create" }) => {
   ) => (
     <div
       style={{
-        width: type === "text" ? undefined : 160,
+        width:
+          type === "text"
+            ? undefined
+            : type === "select"
+              ? 240
+              : type === "time"
+                ? 180
+                : 160,
         flex: type === "text" ? 1 : undefined,
       }}
     >
       <label style={{ color: "#92400e", display: "block", marginBottom: 2 }}>
         {label}
       </label>
-      <input
-        type={type}
-        min={type === "number" ? minValue : undefined}
-        max={type === "number" ? "999" : undefined}
-        maxLength={type === "text" ? 50 : undefined}
-        placeholder={placeholder}
-        value={value}
-        onKeyDown={
-          type === "number"
-            ? (e) => {
-                if (
-                  e.key === "." ||
-                  e.key === "," ||
-                  e.key === "e" ||
-                  e.key === "E" ||
-                  e.key === "-" ||
-                  e.key === "+"
-                ) {
-                  e.preventDefault();
+      {type === "select" ? (
+        <select
+          value={value}
+          onChange={onChange}
+          style={{
+            width: "100%",
+            padding: 8,
+            border: "1px solid #fbbf24",
+            borderRadius: 6,
+            cursor: "pointer",
+          }}
+          title={title}
+        >
+          {emergencyTypes.map((eType) => (
+            <option key={eType.value} value={eType.value}>
+              {eType.label}
+            </option>
+          ))}
+        </select>
+      ) : type === "time" ? (
+        <div
+          style={{
+            padding: "4px 8px",
+            border: "1px solid #fbbf24",
+            borderRadius: 6,
+            background: "#fff",
+          }}
+        >
+          <TimeInput
+            totalSeconds={value}
+            onChange={(newVal) =>
+              onChange({ target: { value: newVal.toString() } })
+            }
+            onBlur={(newVal) =>
+              onChange({ target: { value: newVal.toString() } })
+            }
+            minValue={minValue}
+            isRequired={true}
+          />
+        </div>
+      ) : (
+        <input
+          type={type}
+          min={type === "number" ? minValue : undefined}
+          maxLength={type === "text" ? 50 : undefined}
+          placeholder={placeholder}
+          value={value}
+          onKeyDown={
+            type === "number"
+              ? (e) => {
+                  if (
+                    e.key === "." ||
+                    e.key === "," ||
+                    e.key === "e" ||
+                    e.key === "E" ||
+                    e.key === "-" ||
+                    e.key === "+"
+                  ) {
+                    e.preventDefault();
+                  }
                 }
-              }
-            : undefined
-        }
-        onPaste={
-          type === "number"
-            ? (e) => {
-                const pastedData = e.clipboardData.getData("text");
-                if (!/^\d+$/.test(pastedData)) {
-                  e.preventDefault();
+              : undefined
+          }
+          onPaste={
+            type === "number"
+              ? (e) => {
+                  const pastedData = e.clipboardData.getData("text");
+                  if (!/^\d+$/.test(pastedData)) {
+                    e.preventDefault();
+                  }
                 }
-              }
-            : undefined
-        }
-        onChange={
-          type === "number"
-            ? (e) => {
-                const val = e.target.value.replace(/^0+/, "") || "";
-                if (
-                  val === "" ||
-                  (/^\d+$/.test(val) && Number(val) >= 0 && Number(val) <= 999)
-                ) {
-                  const processedVal = val === "" ? "" : parseInt(val) || "";
-                  onChange({ target: { value: processedVal.toString() } });
+              : undefined
+          }
+          onChange={
+            type === "number"
+              ? (e) => {
+                  const val = e.target.value.replace(/^0+/, "") || "";
+                  if (val === "" || (/^\d+$/.test(val) && Number(val) >= 0)) {
+                    const processedVal = val === "" ? "" : parseInt(val) || "";
+                    onChange({ target: { value: processedVal.toString() } });
+                  }
                 }
-              }
-            : onChange
-        }
-        onBlur={
-          type === "number"
-            ? (e) => {
-                const val = e.target.value;
-                if (val === "" || Number(val) < minValue) {
-                  const newVal = minValue;
-                  onChange({ target: { value: newVal.toString() } });
-                } else {
-                  const clampedVal = Math.min(
-                    999,
-                    Math.max(minValue, parseInt(val) || minValue),
-                  );
-                  onChange({ target: { value: clampedVal.toString() } });
+              : onChange
+          }
+          onBlur={
+            type === "number"
+              ? (e) => {
+                  const val = e.target.value;
+                  if (val === "" || Number(val) < minValue) {
+                    const newVal = minValue;
+                    onChange({ target: { value: newVal.toString() } });
+                  } else {
+                    const clampedVal = Math.min(
+                      Math.max(minValue, parseInt(val) || minValue),
+                    );
+                    onChange({ target: { value: clampedVal.toString() } });
+                  }
                 }
-              }
-            : undefined
-        }
-        style={{
-          width: "100%",
-          padding: 8,
-          border: "1px solid #fbbf24",
-          borderRadius: 6,
-        }}
-        title={title}
-      />
+              : undefined
+          }
+          style={{
+            width: "100%",
+            padding: 8,
+            border: "1px solid #fbbf24",
+            borderRadius: 6,
+          }}
+          title={title}
+        />
+      )}
     </div>
   );
 
@@ -622,21 +805,58 @@ const ScenarioForm = ({ mode = "create" }) => {
               required
             />
           </div>
-          <div className="input-group" style={{ width: 200, marginTop: 20 }}>
-            <select
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-              style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #e5e7eb",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
+          <div
+            className="input-group"
+            style={{ width: 200, marginTop: 20, position: "relative" }}
+          >
+            <div
+              onMouseEnter={() => setShowThemePreview(true)}
+              onMouseLeave={() => setShowThemePreview(false)}
             >
-              <option value="dark">Dark Theme</option>
-              <option value="light">Light Theme</option>
-            </select>
+              <select
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                style={{
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #e5e7eb",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  width: "100%",
+                }}
+              >
+                <option value="dark">Dark Theme</option>
+                <option value="light">Light Theme</option>
+              </select>
+
+              {showThemePreview && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: "0",
+                    marginTop: "10px",
+                    zIndex: 1000,
+                    background: "white",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
+                    border: "3px solid #ff8800",
+                    overflow: "hidden",
+                    maxWidth: "600px",
+                  }}
+                >
+                  <img
+                    src={theme === "dark" ? darkThemeImg : lightThemeImg}
+                    alt={`${theme} theme preview`}
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      display: "block",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -664,12 +884,11 @@ const ScenarioForm = ({ mode = "create" }) => {
                 Stop Name <span style={{ color: "#ef4444" }}>*</span>
               </div>
               <div style={{ flex: 1, minWidth: 120 }}>
-                Travel Time to Next Stop (sec){" "}
+                Time to Reach Next Stop{" "}
                 <span style={{ color: "#ef4444" }}>*</span>
               </div>
               <div style={{ flex: 1, minWidth: 150 }}>
-                Stay Time at Stop (sec){" "}
-                <span style={{ color: "#ef4444" }}>*</span>
+                Stay Time at Stop <span style={{ color: "#ef4444" }}>*</span>
               </div>
               <div style={{ width: 80 }}></div>
             </div>
@@ -726,17 +945,21 @@ const ScenarioForm = ({ mode = "create" }) => {
                           N/A
                         </div>
                       ) : (
-                        <div className="stop-input">
-                          {renderNumberInput(
-                            stop.travelTimeToNextStop,
-                            (val) =>
-                              updateStop(stop.id, "travelTimeToNextStop", val),
-                            (val) =>
-                              updateStop(stop.id, "travelTimeToNextStop", val),
-                            "30",
-                            true,
-                            30,
-                          )}
+                        <div
+                          className="stop-input"
+                          style={{ display: "flex", justifyContent: "center" }}
+                        >
+                          <TimeInput
+                            totalSeconds={stop.travelTimeToNextStop}
+                            onChange={(val) =>
+                              updateStop(stop.id, "travelTimeToNextStop", val)
+                            }
+                            onBlur={(val) =>
+                              updateStop(stop.id, "travelTimeToNextStop", val)
+                            }
+                            minValue={30}
+                            isRequired={true}
+                          />
                         </div>
                       )}
                     </div>
@@ -754,13 +977,21 @@ const ScenarioForm = ({ mode = "create" }) => {
                           N/A
                         </div>
                       ) : (
-                        <div className="stop-input">
-                          {renderNumberInput(
-                            stop.stayTimeAtStop,
-                            (val) => updateStop(stop.id, "stayTimeAtStop", val),
-                            (val) => updateStop(stop.id, "stayTimeAtStop", val),
-                            "30",
-                          )}
+                        <div
+                          className="stop-input"
+                          style={{ display: "flex", justifyContent: "center" }}
+                        >
+                          <TimeInput
+                            totalSeconds={stop.stayTimeAtStop}
+                            onChange={(val) =>
+                              updateStop(stop.id, "stayTimeAtStop", val)
+                            }
+                            onBlur={(val) =>
+                              updateStop(stop.id, "stayTimeAtStop", val)
+                            }
+                            minValue={0}
+                            isRequired={true}
+                          />
                         </div>
                       )}
                     </div>
@@ -784,121 +1015,125 @@ const ScenarioForm = ({ mode = "create" }) => {
             ))}
           </div>
 
-          {stops.some((stop) => stop.emergencies?.length > 0) && (
+          {emergencies.length > 0 && (
             <div style={{ marginBottom: 12 }}>
-              {stops.map((stop, idx) =>
-                (stop.emergencies || []).map((em, ei) => (
-                  <div
-                    key={`em-${idx}-${ei}`}
-                    style={{
-                      padding: 12,
-                      border: "1px solid #f3a683",
-                      borderRadius: "8px",
-                      background: "#fffaf0",
-                      marginBottom: 12,
-                    }}
-                  >
-                    {idx === 0 && ei === 0 && (
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: "#92400e",
-                          marginBottom: 8,
-                          padding: "6px 10px",
-                          background: "#fef3c7",
-                          borderRadius: 4,
-                          border: "1px solid #fbbf24",
-                        }}
-                      >
-                        💡 <strong>Note:</strong> Emergency interrupts the video
-                        at your chosen time and adds extra seconds. The video
-                        then continues from where it paused.
-                      </div>
-                    )}
+              {emergencies.map((em, ei) => (
+                <div
+                  key={`em-${ei}`}
+                  style={{
+                    padding: 12,
+                    border: "1px solid #f3a683",
+                    borderRadius: "8px",
+                    background: "#fffaf0",
+                    marginBottom: 12,
+                  }}
+                >
+                  {ei === 0 && (
                     <div
-                      className="emergency-grid"
                       style={{
-                        display: "flex",
-                        gap: 12,
-                        alignItems: "center",
+                        fontSize: 12,
+                        color: "#92400e",
+                        marginBottom: 8,
+                        padding: "6px 10px",
+                        background: "#fef3c7",
+                        borderRadius: 4,
+                        border: "1px solid #fbbf24",
                       }}
                     >
-                      {renderEmergencyInput(
-                        "Emergency description",
-                        "text",
-                        em.text,
-                        (e) => updateEmergency(idx, ei, "text", e.target.value),
-                        "e.g., Fire Ahead",
-                        undefined,
-                      )}
-
-                      {renderEmergencyInput(
-                        "Interrupt At (sec)",
-                        "number",
-                        em.startSecond,
-                        (e) =>
-                          updateEmergency(
-                            idx,
-                            ei,
-                            "startSecond",
-                            e.target.value,
-                          ),
-                        "120",
-                        "Time in video when emergency interrupts and displays",
-                      )}
-
-                      {renderEmergencyInput(
-                        "Display Duration (sec)",
-                        "number",
-                        em.seconds,
-                        (e) =>
-                          updateEmergency(idx, ei, "seconds", e.target.value),
-                        "10",
-                        "How long the emergency message displays before video resumes",
-                        10,
-                      )}
-
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          marginTop: 18,
-                          width: 80,
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className="delete-btn"
-                          onClick={() => removeEmergency(idx, ei)}
-                          style={{ padding: "8px 12px" }}
-                        >
-                          🗑️
-                        </button>
-                      </div>
+                      💡 <strong>Note:</strong> Emergency interrupts the video
+                      at your chosen time and adds extra time to total duration.
+                      The video then continues from where it paused.
                     </div>
-                    {emergencyError && (
-                      <div
-                        style={{
-                          padding: "10px 12px",
-                          backgroundColor: "#fee2e2",
-                          color: "#dc2626",
-                          borderRadius: "6px",
-                          marginTop: "8px",
-                          border: "1px solid #fca5a5",
-                          fontSize: "13px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        ⚠️ {emergencyError}
-                      </div>
+                  )}
+                  <div
+                    className="emergency-grid stop-input"
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "center",
+                    }}
+                  >
+                    {renderEmergencyInput(
+                      "Emergency Type",
+                      "select",
+                      em.type || "danger",
+                      (e) => updateEmergency(ei, "type", e.target.value),
+                      undefined,
+                      emergencyTypes.find(
+                        (t) => t.value === (em.type || "danger"),
+                      )?.description,
                     )}
+
+                    {renderEmergencyInput(
+                      "Emergency description *",
+                      "text",
+                      em.text,
+                      (e) => updateEmergency(ei, "text", e.target.value),
+                      "e.g., Fire Ahead",
+                      undefined,
+                    )}
+
+                    {renderEmergencyInput(
+                      `Start At`,
+                      "time",
+                      em.startSecond,
+                      (e) => updateEmergency(ei, "startSecond", e.target.value),
+                      Math.min(10, Math.max(0, baseDuration - 1)).toString(),
+                      `Time in video when emergency interrupts (max: ${formatTime(baseDuration - 1)})`,
+                      0,
+                      baseDuration - 1,
+                    )}
+
+                    {renderEmergencyInput(
+                      "Display Duration",
+                      "time",
+                      em.seconds,
+                      (e) => updateEmergency(ei, "seconds", e.target.value),
+                      "10",
+                      "How long the emergency message displays before video resumes",
+                      10,
+                    )}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        marginTop: 18,
+                        width: 80,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="delete-btn"
+                        onClick={() => removeEmergency(ei)}
+                        style={{ padding: "8px 12px" }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
-                )),
-              )}
+                  {emergencyError && (
+                    <div
+                      style={{
+                        padding: "10px 12px",
+                        backgroundColor: "#fee2e2",
+                        color: "#dc2626",
+                        borderRadius: "6px",
+                        marginTop: "8px",
+                        border: "1px solid #fca5a5",
+                        fontSize: "13px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      ⚠️ {emergencyError}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
-          {!hasAnyEmergency && (
+          {emergencies.length === 0 && (
             <div
               style={{
                 margin: "12px 0",
@@ -909,7 +1144,7 @@ const ScenarioForm = ({ mode = "create" }) => {
               <button
                 type="button"
                 onClick={() => {
-                  addEmergency(0);
+                  addEmergency();
                 }}
                 style={{
                   position: "relative",

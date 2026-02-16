@@ -1,16 +1,30 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userAPI } from "../services/api";
+import { Snackbar } from "./Modals";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showSnackbar, setShowSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (showSnackbar) {
+      const timer = setTimeout(() => {
+        setShowSnackbar(false);
+        setError("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSnackbar]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    setShowSnackbar(false);
     setError("");
     setLoading(true);
 
@@ -22,15 +36,17 @@ const Login = () => {
         localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/dashboard");
       } else {
-        setError(
-          data.message || "Login failed. Please check your credentials.",
-        );
+        const errorMessage =
+          data.message || "Login failed. Please check your credentials.";
+        setLoading(false);
+        setError(errorMessage);
+        setShowSnackbar(true);
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Network error. Please try again.");
-    } finally {
       setLoading(false);
+      setError("Network error. Please try again.");
+      setShowSnackbar(true);
     }
   };
 
@@ -70,12 +86,6 @@ const Login = () => {
         >
           Staff / Student Login
         </h2>
-
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="w-100">
           <div className="mb-3">
@@ -194,6 +204,16 @@ const Login = () => {
           © 2026 Mika WebApp
         </p>
       </div>
+
+      <Snackbar
+        isOpen={showSnackbar}
+        message={error}
+        type="error"
+        onClose={() => {
+          setShowSnackbar(false);
+          setError("");
+        }}
+      />
     </div>
   );
 };
