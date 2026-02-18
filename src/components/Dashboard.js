@@ -614,23 +614,7 @@ const Dashboard = () => {
           ) : (
             <div className="scenarios-grid">
               {filteredScenarios.map((scenario) => (
-                <div
-                  key={scenario._id}
-                  className="scenario-card"
-                  style={{
-                    opacity:
-                      scenario.videoStatus === "generating" ||
-                      scenario.videoStatus === "pending"
-                        ? 0.7
-                        : 1,
-                    pointerEvents:
-                      scenario.videoStatus === "generating" ||
-                      scenario.videoStatus === "pending"
-                        ? "none"
-                        : "auto",
-                    transition: "opacity 0.3s ease",
-                  }}
-                >
+                <div key={scenario._id} className="scenario-card">
                   {(scenario.videoStatus === "generating" ||
                     scenario.videoStatus === "pending") && (
                     <div className="video-generating-banner">
