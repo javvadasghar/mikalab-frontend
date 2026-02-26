@@ -194,7 +194,7 @@ const Dashboard = () => {
   const handleDeleteScenario = async (scenarioId, scenarioName) => {
     showConfirm(
       "Delete Scenario?",
-      `Are you sure you want to delete "${scenarioName}"?\n\nThis action cannot be undone and will also delete the associated video.`,
+      `Are you sure you want to delete "${scenarioName}"?\n\nThis action cannot be undone.`,
       async () => {
         try {
           setDeleting(scenarioId);

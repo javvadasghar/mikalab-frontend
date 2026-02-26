@@ -8,6 +8,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import EditScenario from "./components/EditScenerio";
 import NewUser from "./components/NewUser";
 import ManageUsers from "./components/ManageUsers";
+import NotFound from "./components/NotFound";
 
 function App() {
   return (
@@ -42,7 +43,7 @@ function App() {
           <Route
             path="/new-user"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly>
                 <NewUser />
               </ProtectedRoute>
             }
@@ -50,11 +51,12 @@ function App() {
           <Route
             path="/manage-users"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly>
                 <ManageUsers />
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </Router>
